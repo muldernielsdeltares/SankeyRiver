@@ -1,0 +1,19 @@
+{
+  "name": "SankeyRiver",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "esbuild src/Sankey.ts --bundle --outfile=dist/sankey.js --format=esm",
+    "build:min": "esbuild src/Sankey.ts --bundle --minify --outfile=dist/sankey.min.js --format=esm",
+    "dev": "esbuild src/Sankey.ts --bundle --outfile=dist/sankey.js --format=esm --watch"
+  },
+  "keywords": [],
+  "author": "Niels Mulder",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "esbuild": "^0.25.3",
+    "typescript": "^5.8.3"
+  }
+}
