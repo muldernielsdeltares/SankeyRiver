@@ -264,15 +264,9 @@ function renderLabels(svg2, nodes, config, maxX) {
       node2.label.height = 0;
       continue;
     }
-    let classes = [`label-column-${node2.x}`];
-    if (node2.x === maxX) {
-      classes.push("label-column-last");
-    } else if (node2.x !== 0) {
-      classes.push("label-column-middle");
-    }
     const group = createElement("g", {
       id: `label-node-${node2.idClean}`,
-      class: classes.join(" ")
+      class: classNamesForColumn(node2, maxX, "label")
     });
     svg2.appendChild(group);
     const text = createElement("text", {
@@ -338,7 +332,7 @@ function renderNodesFlows(svg2, groupNodes, groupFlows, nodes, flows, config, wi
         y: node2.y_,
         width: node2.width,
         height: node2.size_,
-        class: node2.className || "",
+        class: classNamesForColumn(node2, maxX, "node", node2.className),
         "data-tooltip": tooltip
       });
       groupNodes.appendChild(rect);
@@ -370,6 +364,18 @@ function renderNodesFlows(svg2, groupNodes, groupFlows, nodes, flows, config, wi
     });
     groupFlows.appendChild(path);
   }
+}
+function classNamesForColumn(node2, maxX, label, extra = null) {
+  let classes = [`${label}-column-${node2.x}`];
+  if (node2.x === maxX) {
+    classes.push(`${label}-column-last`);
+  } else if (node2.x !== 0) {
+    classes.push(`${label}-column-middle`);
+  }
+  if (extra) {
+    classes.push(extra);
+  }
+  return classes.join(" ");
 }
 
 // src/render/tooltip.ts

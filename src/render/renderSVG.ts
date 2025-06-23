@@ -40,16 +40,10 @@ export function renderLabels(svg:SVGSVGElement, nodes:Map<string, Node>, config:
             node.label.height = 0
             continue
         }
-        let classes = [`label-column-${node.x}`]
-        if (node.x === maxX) {
-            classes.push('label-column-last')
-        } else if (node.x !== 0) {
-            classes.push('label-column-middle')
-        }
 
         const group = createElement('g', {
             id: `label-node-${node.idClean}`,
-            class: classes.join(' ')
+            class: classNamesForColumn(node, maxX, 'label')
         })
         svg.appendChild(group)
 
@@ -132,7 +126,7 @@ export function renderNodesFlows(svg:SVGSVGElement, groupNodes:SVGSVGElement, gr
                 y: node.y_,
                 width: node.width,
                 height: node.size_,
-                class: node.className || '',
+                class: classNamesForColumn(node, maxX, 'node', node.className),
                 'data-tooltip': tooltip
             })
             groupNodes.appendChild(rect);
@@ -176,4 +170,17 @@ export function renderNodesFlows(svg:SVGSVGElement, groupNodes:SVGSVGElement, gr
         })
         groupFlows.appendChild(path);
     }
+}
+
+function classNamesForColumn(node:Node, maxX:number, label:string, extra:string|null=null): string {
+    let classes = [`${label}-column-${node.x}`]
+    if (node.x === maxX) {
+        classes.push(`${label}-column-last`)
+    } else if (node.x !== 0) {
+        classes.push(`${label}-column-middle`)
+    }
+    if (extra) {
+        classes.push(extra)
+    }
+    return classes.join(' ')
 }
