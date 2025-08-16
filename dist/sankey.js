@@ -380,38 +380,55 @@ function classNamesForColumn(node2, maxX, label, extra = null) {
 
 // src/render/tooltip.ts
 var tooltipId = "";
-function makeTooltip(containerId, container, config) {
+var tooltipRect;
+var viewportWidth = window.innerWidth;
+var viewportHeight = window.innerHeight;
+function makeTooltip(containerId, config) {
   const el = document.createElement("div");
   tooltipId = `${containerId}-tooltip`;
   el.setAttribute("id", tooltipId);
   el.setAttribute("style", `font-size:${config.fontsize}pt;background:#000;border-radius:5px;padding:5px;color:#fff;position:absolute;display:none;`);
-  container.parentNode.insertBefore(el, container);
-  document.getElementById("tooltip");
+  document.body.appendChild(el);
 }
 function finalizeTooltips() {
   document.querySelectorAll("[data-tooltip]").forEach((el) => {
     const text = el.getAttribute("data-tooltip");
-    el.addEventListener("mousemove", openTooltip(text));
-    el.addEventListener("mouseout", closeTooltip());
+    if (text) {
+      el.addEventListener("mouseenter", openTooltip(text));
+      el.addEventListener("mousemove", moveTooltip());
+      el.addEventListener("mouseleave", closeTooltip());
+    }
   });
 }
 function getTooltip() {
   return document.getElementById(tooltipId);
 }
 function openTooltip(text) {
-  return (event) => {
-    if (!text) {
-      return;
-    }
+  return () => {
     let tooltip = getTooltip();
     tooltip.innerHTML = text;
     tooltip.style.display = "block";
-    tooltip.style.left = event.pageX + 10 + "px";
-    tooltip.style.top = event.pageY + 10 + "px";
+    tooltipRect = tooltip.getBoundingClientRect();
+  };
+}
+function moveTooltip() {
+  return (event) => {
+    let tooltip = getTooltip();
+    tooltipRect = tooltip.getBoundingClientRect();
+    let x = event.clientX + window.scrollX + 10;
+    let y = event.clientY + window.scrollY + 10;
+    if (event.clientX + tooltipRect.width + 20 > viewportWidth) {
+      x = event.clientX + window.scrollX - tooltipRect.width - 10;
+    }
+    if (event.clientY + tooltipRect.height + 20 > viewportHeight) {
+      y = event.clientY + window.scrollY - tooltipRect.height - 10;
+    }
+    tooltip.style.left = x + "px";
+    tooltip.style.top = y + "px";
   };
 }
 function closeTooltip() {
-  return function(event) {
+  return function() {
     let tooltip = getTooltip();
     tooltip.style.display = "none";
   };
@@ -547,7 +564,7 @@ var Sankey = class {
     this.width = this.container.offsetWidth || 500;
     const { svg: svg2, groupNodes, groupFlows, groupLabels } = createSVG(this.config, this.width, this.height);
     this.container.appendChild(svg2);
-    makeTooltip(containerId, this.container, this.config);
+    makeTooltip(containerId, this.config);
     const { nodes, flows } = enrichData(this.config);
     this.nodes = nodes;
     this.flows = flows;
