@@ -337,7 +337,7 @@ function renderNodesFlows(svg2, groupNodes, groupFlows, nodes, flows, config, wi
       });
       groupNodes.appendChild(rect);
     }
-    const labelGroup = document.getElementById(`label-node-${node2.idClean}`);
+    const labelGroup = svg2.getElementById(`label-node-${node2.idClean}`);
     if (!labelGroup) continue;
     let y = node2.y_ + node2.size_ / 2 - node2.label.height / 2 - config.fontsize * 0.3;
     let x;

@@ -133,7 +133,7 @@ export function renderNodesFlows(svg:SVGSVGElement, groupNodes:SVGSVGElement, gr
         }
 
         //position label
-        const labelGroup = document.getElementById(`label-node-${node.idClean}`)
+        const labelGroup = svg.getElementById(`label-node-${node.idClean}`)
         if(!labelGroup) continue
         /*
         let y = Math.min(
