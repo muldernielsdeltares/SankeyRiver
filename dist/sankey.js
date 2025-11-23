@@ -28,7 +28,7 @@ function calculateNodeXPosition(nodeMap, data) {
   });
   return maxX;
 }
-function calculateNodeYPosition(nodes, maxX, config) {
+function calculateNodeYPosition(nodes, maxX) {
   let maxY = 0;
   const nodesSorted = [...nodes.values()].sort((a, b) => (a.sorting ?? 0) - (b.sorting ?? 0));
   for (let x = 0; x <= maxX; x++) {
@@ -40,7 +40,7 @@ function calculateNodeYPosition(nodes, maxX, config) {
       if (!relativeTo || typeof relativeTo.y === "undefined") {
         relativeTo = null;
       }
-      if (relativeTo) {
+      if (relativeTo && node2.relativeTo) {
         node2.y = relativeTo.y + (node2.relativeTo.y1 ?? 0) * relativeTo.size + (node2.relativeTo.y2 ?? 0) * node2.size;
       } else {
         node2.y = y;
@@ -54,12 +54,12 @@ function calculateNodeYPosition(nodes, maxX, config) {
 function sortFlows(nodes) {
   for (const node2 of nodes.values()) {
     let offset = 0;
-    node2.in.sort((a, b) => nodes.get(a.from).y - nodes.get(b.from).y).forEach((flow, i) => {
+    node2.in.sort((a, b) => nodes.get(a.from).y - nodes.get(b.from).y).forEach((flow) => {
       flow.yOffsetTo = offset;
       offset += flow.value;
     });
     offset = 0;
-    node2.out.sort((a, b) => nodes.get(a.to).y - nodes.get(b.to).y).forEach((flow, i) => {
+    node2.out.sort((a, b) => nodes.get(a.to).y - nodes.get(b.to).y).forEach((flow) => {
       flow.yOffsetFrom = offset;
       offset += flow.value;
     });
@@ -339,7 +339,7 @@ function renderNodesFlows(svg2, groupNodes, groupFlows, nodes, flows, config, wi
     }
     const labelGroup = svg2.getElementById(`label-node-${node2.idClean}`);
     if (!labelGroup) continue;
-    let y = node2.y_ + node2.size_ / 2 - node2.label.height / 2 - config.fontsize * 0.3;
+    const y = node2.y_ + node2.size_ / 2 - node2.label.height / 2 - config.fontsize * 0.3;
     let x;
     if (node2.label.position === "left") {
       x = node2.x_ - node2.label.width;
@@ -366,7 +366,7 @@ function renderNodesFlows(svg2, groupNodes, groupFlows, nodes, flows, config, wi
   }
 }
 function classNamesForColumn(node2, maxX, label, extra = null) {
-  let classes = [`${label}-column-${node2.x}`];
+  const classes = [`${label}-column-${node2.x}`];
   if (node2.x === maxX) {
     classes.push(`${label}-column-last`);
   } else if (node2.x !== 0) {
@@ -405,7 +405,7 @@ function getTooltip() {
 }
 function openTooltip(text) {
   return () => {
-    let tooltip = getTooltip();
+    const tooltip = getTooltip();
     tooltip.innerHTML = text;
     tooltip.style.display = "block";
     tooltipRect = tooltip.getBoundingClientRect();
@@ -413,7 +413,7 @@ function openTooltip(text) {
 }
 function moveTooltip() {
   return (event) => {
-    let tooltip = getTooltip();
+    const tooltip = getTooltip();
     tooltipRect = tooltip.getBoundingClientRect();
     let x = event.clientX + window.scrollX + 10;
     let y = event.clientY + window.scrollY + 10;
@@ -429,7 +429,7 @@ function moveTooltip() {
 }
 function closeTooltip() {
   return function() {
-    let tooltip = getTooltip();
+    const tooltip = getTooltip();
     tooltip.style.display = "none";
   };
 }
@@ -459,7 +459,6 @@ function enrichData(config) {
       ...nodeConfig[id],
       label: {
         ...nodeBaseConfig?.label,
-        //todo
         ...nodeConfig[id]?.label
       }
     };
@@ -469,7 +468,7 @@ function enrichData(config) {
     nodes.get(flow.from).out.push(flow);
     nodes.get(flow.to).in.push(flow);
   }
-  for (let node2 of nodes.values()) {
+  for (const node2 of nodes.values()) {
     node2.size = Math.max(
       node2.in.reduce((a, i) => a + i.value, 0),
       node2.out.reduce((a, i) => a + i.value, 0)

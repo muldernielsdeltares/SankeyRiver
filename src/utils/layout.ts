@@ -40,7 +40,7 @@ export function calculateNodeXPosition(nodeMap: Map<string, Node>, data: Flow[])
     return maxX
 }
 
-export function calculateNodeYPosition(nodes:Map<string, Node>, maxX:number, config) {
+export function calculateNodeYPosition(nodes:Map<string, Node>, maxX:number) {
     let maxY = 0
     const nodesSorted = [...nodes.values()].sort((a, b) => (a.sorting ?? 0) - (b.sorting ?? 0))
     for (let x = 0; x <= maxX; x++) {
@@ -53,7 +53,7 @@ export function calculateNodeYPosition(nodes:Map<string, Node>, maxX:number, con
             if (!relativeTo || typeof relativeTo.y === 'undefined') {
                 relativeTo = null
             }
-            if (relativeTo) {
+            if (relativeTo && node.relativeTo) {
                 node.y = relativeTo.y +
                     (node.relativeTo.y1 ?? 0) * relativeTo.size +
                     (node.relativeTo.y2 ?? 0) * node.size
@@ -76,7 +76,7 @@ export function sortFlows(nodes: Map<string, Node>) {
         //let len = node.in.length
         node.in
             .sort((a, b) => nodes.get(a.from).y - nodes.get(b.from).y)
-            .forEach((flow, i) => {
+            .forEach((flow) => {
                 //if (overlapFrom) {
                 //    flow.yOffsetFrom = (idx * (nodeSize - flow.value)) / (len - 1)
                 //}
@@ -89,7 +89,7 @@ export function sortFlows(nodes: Map<string, Node>) {
         //len = node.out.length
         node.out
             .sort((a, b) => nodes.get(a.to).y - nodes.get(b.to).y)
-            .forEach((flow, i) => {
+            .forEach((flow) => {
                 //if (overlapTo) {
                 //    flow.yOffsetTo = (idx * (nodeSize - flow.value)) / (len - 1)
                 //}

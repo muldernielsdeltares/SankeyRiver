@@ -1,5 +1,4 @@
 import { Flow } from './Flow';
-
 export interface Node {
     id: string;
     idClean: string;

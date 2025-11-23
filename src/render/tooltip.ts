@@ -1,7 +1,7 @@
 import {SankeyConfig} from "../Sankey";
 
 let tooltipId = '';
-let tooltipRect: any
+let tooltipRect: DOMRect
 const viewportWidth = window.innerWidth;
 const viewportHeight = window.innerHeight;
 
@@ -29,7 +29,7 @@ function getTooltip() {
 
 function openTooltip(text) {
     return () => {
-        let tooltip = getTooltip();
+        const tooltip = getTooltip();
         tooltip.innerHTML = text;
         tooltip.style.display = "block";
         tooltipRect = tooltip.getBoundingClientRect();
@@ -38,7 +38,7 @@ function openTooltip(text) {
 
 function moveTooltip() {
     return (event) => {
-        let tooltip = getTooltip();
+        const tooltip = getTooltip();
         tooltipRect = tooltip.getBoundingClientRect();
 
         // Base coordinates: client position + current scroll offsets
@@ -62,7 +62,7 @@ function moveTooltip() {
 
 function closeTooltip() {
     return function() {
-        let tooltip = getTooltip();
+        const tooltip = getTooltip();
         tooltip.style.display = "none";
     }
 }

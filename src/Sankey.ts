@@ -35,7 +35,7 @@ export class Sankey {
     private readonly maxY:number
     private readonly height: number
     private readonly width: number
-    private readonly maxNodeWidth: Map<Number, Number>
+    private readonly maxNodeWidth: Map<number, number>
     private readonly container:HTMLElement
 
     constructor(

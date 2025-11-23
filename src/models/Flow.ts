@@ -1,5 +1,3 @@
-import {Node} from "./Node";
-
 export interface Flow {
     from: string;
     to: string;

@@ -16,7 +16,7 @@ const createElement = (qualifiedName:string, attributes:Record<string, string | 
     )
     return el
 }
-export function createSVG(config:SankeyConfig, width:number, height:number): any {
+export function createSVG(config:SankeyConfig, width:number, height:number): {svg:SVGSVGElement, groupNodes:SVGGElement, groupFlows:SVGGElement, groupLabels:SVGGElement} {
     const svg = createElement('svg', {
         width,
         height,
@@ -83,7 +83,7 @@ export function styling(svg:SVGSVGElement, nodes: Map<string, Node>, flows: Flow
     styleTag.textContent = `svg#${config.id}{\n${generateBaseStyles(config)}\n${generateStyles(nodes, flows)}}`
     svg.appendChild(styleTag);
 }
-export function scaling(nodes: Map<string, Node>, flows: Flow[], config:SankeyConfig, width:number, height:number, maxX:number, maxY:number, maxNodeWidth:Map<Number, Number>) {
+export function scaling(nodes: Map<string, Node>, flows: Flow[], config:SankeyConfig, width:number, height:number, maxX:number, maxY:number, maxNodeWidth:Map<number, number>) {
     // scale canvas
     const labelSpace = config.labelSpaceLeft + config.labelSpaceRight
     const scaleX = (width - labelSpace - maxNodeWidth.get(maxX) - config.margin[1]-config.margin[3]) / maxX
@@ -143,7 +143,7 @@ export function renderNodesFlows(svg:SVGSVGElement, groupNodes:SVGSVGElement, gr
             maxY*scaleY-node.label.height-config.fontsize*0.7 //not below viewport
         )
         */
-        let y = node.y_ + node.size_ / 2 - node.label.height/2 - config.fontsize*0.3
+        const y = node.y_ + node.size_ / 2 - node.label.height/2 - config.fontsize*0.3
         let x
         if (node.label.position === 'left') {
             x = node.x_ - node.label.width
@@ -173,7 +173,7 @@ export function renderNodesFlows(svg:SVGSVGElement, groupNodes:SVGSVGElement, gr
 }
 
 function classNamesForColumn(node:Node, maxX:number, label:string, extra:string|null=null): string {
-    let classes = [`${label}-column-${node.x}`]
+    const classes = [`${label}-column-${node.x}`]
     if (node.x === maxX) {
         classes.push(`${label}-column-last`)
     } else if (node.x !== 0) {

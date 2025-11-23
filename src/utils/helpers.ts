@@ -40,7 +40,7 @@ export function enrichData(config:SankeyConfig): {nodes:Map<string, Node>, flows
         nodes.get(flow.to).in.push(flow);
     }
 
-    for(let node of nodes.values()) {
+    for(const node of nodes.values()) {
         node.size = Math.max(
             node.in.reduce((a, i) => a + i.value, 0),
             node.out.reduce((a, i) => a + i.value, 0),

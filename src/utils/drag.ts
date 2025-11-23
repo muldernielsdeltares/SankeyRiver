@@ -5,7 +5,7 @@ import {generateFlowPath} from "../render/bezier";
 let svg:SVGSVGElement
 let selected: SVGRectElement | null = null;
 let selectedLabel: Element
-let selectedFlows: {element:Element, flow:Flow}[] = []
+const selectedFlows: {element:Element, flow:Flow}[] = []
 let node: Node
 let offsetNode:{ x: number, y: number }
 let offsetLabel:{ x: number, y: number }
