@@ -1,5 +1,6 @@
 import { Node } from '../models/Node';
 import { Flow } from '../models/Flow';
+import {SankeyConfig} from "../Sankey";
 
 export function calculateNodeXPosition(nodeMap: Map<string, Node>, data: Flow[]): number {
     const idsPlace = new Set(nodeMap.keys());
@@ -127,7 +128,7 @@ export function addPadding(nodes:Map<string, Node>, padding:number, maxX:number)
     return maxY-minY
 }
 
-export function nodeLabelSpaceAllocation(nodes:Map<string, Node>, config, maxX) {
+export function nodeLabelSpaceAllocation(nodes:Map<string, Node>, config:SankeyConfig, maxX:number) {
     const maxNodeWidth = new Map<number, number>();
 
     for (const node of nodes.values()) {

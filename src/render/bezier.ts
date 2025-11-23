@@ -1,9 +1,12 @@
+import {Flow} from "../models/Flow";
+import {Node} from "../models/Node";
+
 type Point = { x: number; y: number };
 
-export function generateFlowPath(nodes, flow, scaleX, scaleY): string {
+export function generateFlowPath(nodeMap:Map<string, Node>, flow:Flow, scaleX:number, scaleY:number): string {
 
-    const fromNode = nodes.get(flow.from);
-    const toNode = nodes.get(flow.to);
+    const fromNode = nodeMap.get(flow.from);
+    const toNode = nodeMap.get(flow.to);
     const flowMidValue = flow.value / 2;
     const halfThickness = flowMidValue * scaleY;
 
@@ -27,7 +30,7 @@ export function generateFlowPath(nodes, flow, scaleX, scaleY): string {
 }
 
 // Generates SVG path string for bezier
-function generateBezierPath(x1, y1, x2, y2, halfThickness) {
+function generateBezierPath(x1:number, y1:number, x2:number, y2:number, halfThickness:number) {
     const dx = x2 - x1;
     const controlOffset = dx / 3;
 

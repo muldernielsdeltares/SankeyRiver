@@ -49,7 +49,7 @@ export function renderLabels(svg:SVGSVGElement, nodes:Map<string, Node>, config:
 
         const text = createElement('text', {
             "font-size": `${config.fontsize}pt`,
-        })
+        }) as SVGTextElement
         group.appendChild(text)
 
         if (typeof node.label.text === "string") {
@@ -78,12 +78,12 @@ export function renderLabels(svg:SVGSVGElement, nodes:Map<string, Node>, config:
     }
 }
 
-export function styling(svg:SVGSVGElement, nodes: Map<string, Node>, flows: Flow[], config) {
+export function styling(svg:SVGSVGElement, nodes: Map<string, Node>, flows: Flow[], config:SankeyConfig) {
     const styleTag = document.createElementNS(svgNS, 'style');
     styleTag.textContent = `svg#${config.id}{\n${generateBaseStyles(config)}\n${generateStyles(nodes, flows)}}`
     svg.appendChild(styleTag);
 }
-export function scaling(nodes: Map<string, Node>, flows: Flow[], config:SankeyConfig, width:number, height:number, maxX:number, maxY:number, maxNodeWidth) {
+export function scaling(nodes: Map<string, Node>, flows: Flow[], config:SankeyConfig, width:number, height:number, maxX:number, maxY:number, maxNodeWidth:Map<Number, Number>) {
     // scale canvas
     const labelSpace = config.labelSpaceLeft + config.labelSpaceRight
     const scaleX = (width - labelSpace - maxNodeWidth.get(maxX) - config.margin[1]-config.margin[3]) / maxX

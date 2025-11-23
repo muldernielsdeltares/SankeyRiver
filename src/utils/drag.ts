@@ -18,7 +18,7 @@ const getMousePosition = (event: MouseEvent) => {
     return { x: cursor.x, y: cursor.y };
 };
 
-export function drag(svgEl, nodes, scaleX, scaleY, groupFlows) {
+export function drag(svgEl:SVGSVGElement, nodeMap:Map<string, Node>, scaleX:number, scaleY:number, groupFlows:SVGGElement) {
     svg = svgEl
     const nodeElements = svg.querySelectorAll<SVGRectElement>("rect[id^='node-']")
 
@@ -35,7 +35,7 @@ export function drag(svgEl, nodes, scaleX, scaleY, groupFlows) {
 
             //get node object
             const nodeId = selected.getAttribute('id')
-            node = [...nodes.values()].find(n => n.idClean === nodeId.replace('node-',''))
+            node = [...nodeMap.values()].find(n => n.idClean === nodeId.replace('node-',''))
 
             //get label element
             selectedLabel = svg.getElementById(`label-${nodeId}`)
@@ -81,7 +81,7 @@ export function drag(svgEl, nodes, scaleX, scaleY, groupFlows) {
 
         //adjust flows
         for(const f of selectedFlows) {
-            f.element.setAttribute('d', generateFlowPath(nodes, f.flow, scaleX, scaleY))
+            f.element.setAttribute('d', generateFlowPath(nodeMap, f.flow, scaleX, scaleY))
         }
 
     });

@@ -127,9 +127,9 @@ path.flowvalue-zero{stroke:#ddd;stroke-width:1}
 g[id^='label-node']{pointer-events:none;rect{fill:#fff}}
 *{font-size:${config.fontsize}pt}`;
 }
-function generateStyles(nodes, flows) {
+function generateStyles(nodeMap, flows) {
   let styles = "";
-  for (const node2 of nodes.values()) {
+  for (const node2 of nodeMap.values()) {
     const styleStr = objectToCSS(node2.style);
     if (styleStr) {
       styles += `#node-${node2.idClean} { ${styleStr} }
@@ -151,9 +151,9 @@ function objectToCSS(style) {
 }
 
 // src/render/bezier.ts
-function generateFlowPath(nodes, flow, scaleX, scaleY) {
-  const fromNode = nodes.get(flow.from);
-  const toNode = nodes.get(flow.to);
+function generateFlowPath(nodeMap, flow, scaleX, scaleY) {
+  const fromNode = nodeMap.get(flow.from);
+  const toNode = nodeMap.get(flow.to);
   const flowMidValue = flow.value / 2;
   const halfThickness = flowMidValue * scaleY;
   const fromY = fromNode.y_ + (flowMidValue + flow.yOffsetFrom) * scaleY;
@@ -459,6 +459,7 @@ function enrichData(config) {
       ...nodeConfig[id],
       label: {
         ...nodeBaseConfig?.label,
+        //todo
         ...nodeConfig[id]?.label
       }
     };
@@ -493,7 +494,7 @@ var getMousePosition = (event) => {
   const cursor = pt.matrixTransform(svg.getScreenCTM()?.inverse());
   return { x: cursor.x, y: cursor.y };
 };
-function drag(svgEl, nodes, scaleX, scaleY, groupFlows) {
+function drag(svgEl, nodeMap, scaleX, scaleY, groupFlows) {
   svg = svgEl;
   const nodeElements = svg.querySelectorAll("rect[id^='node-']");
   for (const rect of nodeElements) {
@@ -505,7 +506,7 @@ function drag(svgEl, nodes, scaleX, scaleY, groupFlows) {
       const rectY = Number(rect.getAttribute("y"));
       offsetNode = { x: mousePos.x - rectX, y: mousePos.y - rectY };
       const nodeId = selected.getAttribute("id");
-      node = [...nodes.values()].find((n) => n.idClean === nodeId.replace("node-", ""));
+      node = [...nodeMap.values()].find((n) => n.idClean === nodeId.replace("node-", ""));
       selectedLabel = svg.getElementById(`label-${nodeId}`);
       if (selectedLabel) {
         const labelXY = selectedLabel.getAttribute("transform").slice(10, -1).split(",").map(parseFloat);
@@ -534,7 +535,7 @@ function drag(svgEl, nodes, scaleX, scaleY, groupFlows) {
       selectedLabel.setAttribute("transform", `translate(${x - offsetLabel.x}, ${y - offsetLabel.y})`);
     }
     for (const f of selectedFlows) {
-      f.element.setAttribute("d", generateFlowPath(nodes, f.flow, scaleX, scaleY));
+      f.element.setAttribute("d", generateFlowPath(nodeMap, f.flow, scaleX, scaleY));
     }
   });
   document.addEventListener("mouseup", () => {

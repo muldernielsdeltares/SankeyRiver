@@ -1,9 +1,11 @@
+import {SankeyConfig} from "../Sankey";
+
 let tooltipId = '';
 let tooltipRect: any
 const viewportWidth = window.innerWidth;
 const viewportHeight = window.innerHeight;
 
-export function makeTooltip(containerId:string, config) {
+export function makeTooltip(containerId:string, config:SankeyConfig) {
     const el = document.createElement("div");
     tooltipId = `${containerId}-tooltip`
     el.setAttribute('id', tooltipId);

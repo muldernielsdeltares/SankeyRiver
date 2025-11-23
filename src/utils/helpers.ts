@@ -1,12 +1,12 @@
 import {Node} from "../models/Node";
 import {Flow} from "../models/Flow";
+import {SankeyConfig} from "../Sankey";
 
 export const cleanString = (s) => {
     return s.replaceAll(/[^\w\d]+/g, '')
-
 }
 
-export function enrichData(config): {nodes:Map<string, Node>, flows:Flow[]} {
+export function enrichData(config:SankeyConfig): {nodes:Map<string, Node>, flows:Flow[]} {
 
     const {flows, nodeConfig= {}, nodeBaseConfig = {}, flowBaseConfig = {}} = config;
     const nodeIds = new Set<string>();
