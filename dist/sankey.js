@@ -104,16 +104,10 @@ function nodeLabelSpaceAllocation(nodes, config, maxX) {
     }
     if (x === 0 && position !== "right") {
       const left = position === "center" ? node2.label.width * 0.5 - node2.width / 2 : node2.label.width;
-      config.labelSpaceLeft = Math.max(
-        config.labelSpaceLeft ?? 0,
-        left
-      );
+      config.labelSpaceLeft = Math.max(config.labelSpaceLeft ?? 0, left);
     } else if (x === maxX && position !== "left") {
       const right = position === "center" ? node2.label.width * 0.5 - node2.width / 2 : node2.label.width;
-      config.labelSpaceRight = Math.max(
-        config.labelSpaceRight ?? 0,
-        right
-      );
+      config.labelSpaceRight = Math.max(config.labelSpaceRight ?? 0, right);
     }
   }
   return maxNodeWidth;
@@ -234,13 +228,11 @@ function offsetPoint(p, normal, width) {
 var svgNS = "http://www.w3.org/2000/svg";
 var createElement = (qualifiedName, attributes) => {
   const el = document.createElementNS(svgNS, qualifiedName);
-  Object.entries(attributes).forEach(
-    ([k, v]) => {
-      if (v) {
-        el.setAttribute(k, String(v));
-      }
+  Object.entries(attributes).forEach(([k, v]) => {
+    if (v) {
+      el.setAttribute(k, String(v));
     }
-  );
+  });
   return el;
 };
 function createSVG(config, width, height) {
@@ -387,7 +379,10 @@ function makeTooltip(containerId, config) {
   const el = document.createElement("div");
   tooltipId = `${containerId}-tooltip`;
   el.setAttribute("id", tooltipId);
-  el.setAttribute("style", `font-size:${config.fontsize}pt;background:#000;border-radius:5px;padding:5px;color:#fff;position:absolute;display:none;`);
+  el.setAttribute(
+    "style",
+    `font-size:${config.fontsize}pt;background:#000;border-radius:5px;padding:5px;color:#fff;position:absolute;display:none;`
+  );
   document.body.appendChild(el);
 }
 function finalizeTooltips() {
@@ -509,7 +504,10 @@ function drag(svgEl, nodeMap, scaleX, scaleY, groupFlows) {
       selectedLabel = svg.getElementById(`label-${nodeId}`);
       if (selectedLabel) {
         const labelXY = selectedLabel.getAttribute("transform").slice(10, -1).split(",").map(parseFloat);
-        offsetLabel = { x: mousePos.x - labelXY[0], y: mousePos.y - labelXY[1] };
+        offsetLabel = {
+          x: mousePos.x - labelXY[0],
+          y: mousePos.y - labelXY[1]
+        };
       }
       for (const flow of node.in.concat(node.out)) {
         const element = svg.getElementById(`flow-${flow.idClean}`);
@@ -531,7 +529,10 @@ function drag(svgEl, nodeMap, scaleX, scaleY, groupFlows) {
     selected.setAttribute("x", String(x - offsetNode.x));
     selected.setAttribute("y", String(y - offsetNode.y));
     if (selectedLabel) {
-      selectedLabel.setAttribute("transform", `translate(${x - offsetLabel.x}, ${y - offsetLabel.y})`);
+      selectedLabel.setAttribute(
+        "transform",
+        `translate(${x - offsetLabel.x}, ${y - offsetLabel.y})`
+      );
     }
     for (const f of selectedFlows) {
       f.element.setAttribute("d", generateFlowPath(nodeMap, f.flow, scaleX, scaleY));
@@ -562,7 +563,11 @@ var Sankey = class {
     this.container.innerHTML = "";
     this.height = this.container.offsetHeight || 500;
     this.width = this.container.offsetWidth || 500;
-    const { svg: svg2, groupNodes, groupFlows, groupLabels } = createSVG(this.config, this.width, this.height);
+    const { svg: svg2, groupNodes, groupFlows, groupLabels } = createSVG(
+      this.config,
+      this.width,
+      this.height
+    );
     this.container.appendChild(svg2);
     makeTooltip(containerId, this.config);
     const { nodes, flows } = enrichData(this.config);
@@ -576,8 +581,28 @@ var Sankey = class {
     renderLabels(groupLabels, this.nodes, this.config, this.maxX);
     this.maxNodeWidth = nodeLabelSpaceAllocation(this.nodes, this.config, this.maxX);
     styling(svg2, this.nodes, this.flows, this.config);
-    scaling(this.nodes, this.flows, this.config, this.width, this.height, this.maxX, this.maxY, this.maxNodeWidth);
-    renderNodesFlows(svg2, groupNodes, groupFlows, this.nodes, this.flows, this.config, this.width, this.height, this.maxX, this.maxY);
+    scaling(
+      this.nodes,
+      this.flows,
+      this.config,
+      this.width,
+      this.height,
+      this.maxX,
+      this.maxY,
+      this.maxNodeWidth
+    );
+    renderNodesFlows(
+      svg2,
+      groupNodes,
+      groupFlows,
+      this.nodes,
+      this.flows,
+      this.config,
+      this.width,
+      this.height,
+      this.maxX,
+      this.maxY
+    );
     finalizeTooltips();
     drag(svg2, this.nodes, config.scaleX, config.scaleY, groupFlows);
   }

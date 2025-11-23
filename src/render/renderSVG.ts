@@ -1,39 +1,55 @@
-import { Node } from '../models/Node';
-import { Flow } from '../models/Flow';
-import { generateBaseStyles, generateStyles} from './styles';
-import {SankeyConfig} from "../Sankey";
-import {generateFlowPath} from "./bezier";
+import { Node } from "../models/Node"
+import { Flow } from "../models/Flow"
+import { generateBaseStyles, generateStyles } from "./styles"
+import { SankeyConfig } from "../Sankey"
+import { generateFlowPath } from "./bezier"
 
-const svgNS = 'http://www.w3.org/2000/svg';
+const svgNS = "http://www.w3.org/2000/svg"
 
-const createElement = (qualifiedName:string, attributes:Record<string, string | number | null>):SVGElement => {
+const createElement = (
+    qualifiedName: string,
+    attributes: Record<string, string | number | null>,
+): SVGElement => {
     const el = document.createElementNS(svgNS, qualifiedName)
     Object.entries(attributes).forEach(([k, v]) => {
-            if (v) {
-                el.setAttribute(k, String(v))
-            }
+        if (v) {
+            el.setAttribute(k, String(v))
         }
-    )
+    })
     return el
 }
-export function createSVG(config:SankeyConfig, width:number, height:number): {svg:SVGSVGElement, groupNodes:SVGGElement, groupFlows:SVGGElement, groupLabels:SVGGElement} {
-    const svg = createElement('svg', {
+export function createSVG(
+    config: SankeyConfig,
+    width: number,
+    height: number,
+): {
+    svg: SVGSVGElement
+    groupNodes: SVGGElement
+    groupFlows: SVGGElement
+    groupLabels: SVGGElement
+} {
+    const svg = createElement("svg", {
         width,
         height,
-        id: config.id
+        id: config.id,
     })
 
-    const groupNodes = createElement('g', {id:'nodes'})
-    svg.appendChild(groupNodes);
-    const groupFlows = createElement('g', {id:'flows'});
-    svg.appendChild(groupFlows);
-    const groupLabels = createElement('g', {id:'labels'});
-    svg.appendChild(groupLabels);
+    const groupNodes = createElement("g", { id: "nodes" })
+    svg.appendChild(groupNodes)
+    const groupFlows = createElement("g", { id: "flows" })
+    svg.appendChild(groupFlows)
+    const groupLabels = createElement("g", { id: "labels" })
+    svg.appendChild(groupLabels)
 
-    return {svg, groupNodes, groupFlows, groupLabels};
+    return { svg, groupNodes, groupFlows, groupLabels }
 }
 
-export function renderLabels(svg:SVGSVGElement, nodes:Map<string, Node>, config:SankeyConfig, maxX:number) {
+export function renderLabels(
+    svg: SVGSVGElement,
+    nodes: Map<string, Node>,
+    config: SankeyConfig,
+    maxX: number,
+) {
     for (const node of nodes.values()) {
         if (!node.label.text) {
             node.label.width = 0
@@ -41,23 +57,23 @@ export function renderLabels(svg:SVGSVGElement, nodes:Map<string, Node>, config:
             continue
         }
 
-        const group = createElement('g', {
+        const group = createElement("g", {
             id: `label-node-${node.idClean}`,
-            class: classNamesForColumn(node, maxX, 'label')
+            class: classNamesForColumn(node, maxX, "label"),
         })
         svg.appendChild(group)
 
-        const text = createElement('text', {
+        const text = createElement("text", {
             "font-size": `${config.fontsize}pt`,
         }) as SVGTextElement
         group.appendChild(text)
 
         if (typeof node.label.text === "string") {
-            const lines = node.label.text.split('\n')
+            const lines = node.label.text.split("\n")
             for (const line of lines) {
-                const tspan = createElement('tspan', {
+                const tspan = createElement("tspan", {
                     x: config.labelPadding,
-                    dy: '1.2em',
+                    dy: "1.2em",
                     "font-size": `${config.fontsize}pt`,
                 })
                 tspan.textContent = line
@@ -65,11 +81,11 @@ export function renderLabels(svg:SVGSVGElement, nodes:Map<string, Node>, config:
             }
         }
 
-        const bbox = text.getBBox();
+        const bbox = text.getBBox()
         node.label.width = bbox.width + 2 * config.labelPadding
         node.label.height = bbox.height + 2 * config.labelPadding
 
-        const rect = createElement('rect', {
+        const rect = createElement("rect", {
             width: node.label.width,
             height: node.label.height,
             "font-size": `${config.fontsize}pt`,
@@ -78,16 +94,31 @@ export function renderLabels(svg:SVGSVGElement, nodes:Map<string, Node>, config:
     }
 }
 
-export function styling(svg:SVGSVGElement, nodes: Map<string, Node>, flows: Flow[], config:SankeyConfig) {
-    const styleTag = document.createElementNS(svgNS, 'style');
+export function styling(
+    svg: SVGSVGElement,
+    nodes: Map<string, Node>,
+    flows: Flow[],
+    config: SankeyConfig,
+) {
+    const styleTag = document.createElementNS(svgNS, "style")
     styleTag.textContent = `svg#${config.id}{\n${generateBaseStyles(config)}\n${generateStyles(nodes, flows)}}`
-    svg.appendChild(styleTag);
+    svg.appendChild(styleTag)
 }
-export function scaling(nodes: Map<string, Node>, flows: Flow[], config:SankeyConfig, width:number, height:number, maxX:number, maxY:number, maxNodeWidth:Map<number, number>) {
+export function scaling(
+    nodes: Map<string, Node>,
+    flows: Flow[],
+    config: SankeyConfig,
+    width: number,
+    height: number,
+    maxX: number,
+    maxY: number,
+    maxNodeWidth: Map<number, number>,
+) {
     // scale canvas
     const labelSpace = config.labelSpaceLeft + config.labelSpaceRight
-    const scaleX = (width - labelSpace - maxNodeWidth.get(maxX) - config.margin[1]-config.margin[3]) / maxX
-    const scaleY = (height-config.margin[0]-config.margin[2])/maxY
+    const scaleX =
+        (width - labelSpace - maxNodeWidth.get(maxX) - config.margin[1] - config.margin[3]) / maxX
+    const scaleY = (height - config.margin[0] - config.margin[2]) / maxY
 
     config.scaleX = scaleX
     config.scaleY = scaleY
@@ -95,10 +126,8 @@ export function scaling(nodes: Map<string, Node>, flows: Flow[], config:SankeyCo
     // Nodes
     for (const node of nodes.values()) {
         //node shift based on width
-        const shift = node.x === 0 ? 0 :
-            (
-                (maxNodeWidth.get(node.x) - node.width) / (node.x === maxX ? 1 : 2)
-            )
+        const shift =
+            node.x === 0 ? 0 : (maxNodeWidth.get(node.x) - node.width) / (node.x === maxX ? 1 : 2)
         //scaling
         node.x_ = node.x * scaleX + config.labelSpaceLeft + shift + config.margin[1]
         node.y_ = node.y * scaleY + config.margin[0]
@@ -106,10 +135,22 @@ export function scaling(nodes: Map<string, Node>, flows: Flow[], config:SankeyCo
     }
 }
 
-export function renderNodesFlows(svg:SVGSVGElement, groupNodes:SVGSVGElement, groupFlows:SVGSVGElement, nodes: Map<string, Node>, flows: Flow[], config:SankeyConfig, width:number, height:number, maxX:number, maxY:number, clear:boolean=false) {
+export function renderNodesFlows(
+    svg: SVGSVGElement,
+    groupNodes: SVGSVGElement,
+    groupFlows: SVGSVGElement,
+    nodes: Map<string, Node>,
+    flows: Flow[],
+    config: SankeyConfig,
+    width: number,
+    height: number,
+    maxX: number,
+    maxY: number,
+    clear: boolean = false,
+) {
     if (clear) {
-        groupNodes.innerHTML = ''
-        groupFlows.innerHTML = ''
+        groupNodes.innerHTML = ""
+        groupFlows.innerHTML = ""
     }
 
     const scaleX = config.scaleX
@@ -118,23 +159,28 @@ export function renderNodesFlows(svg:SVGSVGElement, groupNodes:SVGSVGElement, gr
     // Nodes
     for (const node of nodes.values()) {
         //rect
-        if (node.width > 0 && node.size_>0) {
-            const tooltip = typeof node.tooltip === 'function' ? node.tooltip(node) : (node.tooltip === null ? null : node.tooltip || `${node.label.text || ''} (${node.size})`);
-            const rect = createElement('rect', {
+        if (node.width > 0 && node.size_ > 0) {
+            const tooltip =
+                typeof node.tooltip === "function"
+                    ? node.tooltip(node)
+                    : node.tooltip === null
+                      ? null
+                      : node.tooltip || `${node.label.text || ""} (${node.size})`
+            const rect = createElement("rect", {
                 id: `node-${node.idClean}`,
                 x: node.x_,
                 y: node.y_,
                 width: node.width,
                 height: node.size_,
-                class: classNamesForColumn(node, maxX, 'node', node.className),
-                'data-tooltip': tooltip
+                class: classNamesForColumn(node, maxX, "node", node.className),
+                "data-tooltip": tooltip,
             })
-            groupNodes.appendChild(rect);
+            groupNodes.appendChild(rect)
         }
 
         //position label
         const labelGroup = svg.getElementById(`label-node-${node.idClean}`)
-        if(!labelGroup) continue
+        if (!labelGroup) continue
         /*
         let y = Math.min(
             Math.max(
@@ -143,36 +189,47 @@ export function renderNodesFlows(svg:SVGSVGElement, groupNodes:SVGSVGElement, gr
             maxY*scaleY-node.label.height-config.fontsize*0.7 //not below viewport
         )
         */
-        const y = node.y_ + node.size_ / 2 - node.label.height/2 - config.fontsize*0.3
+        const y = node.y_ + node.size_ / 2 - node.label.height / 2 - config.fontsize * 0.3
         let x
-        if (node.label.position === 'left') {
+        if (node.label.position === "left") {
             x = node.x_ - node.label.width
-        } else if (node.label.position === 'right') {
+        } else if (node.label.position === "right") {
             x = node.x_ + node.width
         } else {
-            x = node.x_ + node.width / 2 - node.label.width/2
+            x = node.x_ + node.width / 2 - node.label.width / 2
         }
-        labelGroup.setAttribute('transform', `translate(${x}, ${y})`);
+        labelGroup.setAttribute("transform", `translate(${x}, ${y})`)
     }
 
     // Flows
     for (const flow of flows) {
         const classNames = [flow.className]
-        if(flow.value === 0) {
-            classNames.push('flowvalue-zero')
+        if (flow.value === 0) {
+            classNames.push("flowvalue-zero")
         }
-        const tooltip = typeof flow.tooltip === 'function' ? flow.tooltip(flow) : (flow.tooltip === null ? null : flow.tooltip || `${nodes.get(flow.from).label.text} &rarr; ${nodes.get(flow.to).label.text}: ${flow.value}`)
-        const path = createElement('path', {
+        const tooltip =
+            typeof flow.tooltip === "function"
+                ? flow.tooltip(flow)
+                : flow.tooltip === null
+                  ? null
+                  : flow.tooltip ||
+                    `${nodes.get(flow.from).label.text} &rarr; ${nodes.get(flow.to).label.text}: ${flow.value}`
+        const path = createElement("path", {
             id: `flow-${flow.idClean}`,
-            class: classNames.join(' '),
+            class: classNames.join(" "),
             d: generateFlowPath(nodes, flow, scaleX, scaleY),
-            'data-tooltip': tooltip
+            "data-tooltip": tooltip,
         })
-        groupFlows.appendChild(path);
+        groupFlows.appendChild(path)
     }
 }
 
-function classNamesForColumn(node:Node, maxX:number, label:string, extra:string|null=null): string {
+function classNamesForColumn(
+    node: Node,
+    maxX: number,
+    label: string,
+    extra: string | null = null,
+): string {
     const classes = [`${label}-column-${node.x}`]
     if (node.x === maxX) {
         classes.push(`${label}-column-last`)
@@ -182,5 +239,5 @@ function classNamesForColumn(node:Node, maxX:number, label:string, extra:string|
     if (extra) {
         classes.push(extra)
     }
-    return classes.join(' ')
+    return classes.join(" ")
 }
