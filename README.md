@@ -175,6 +175,21 @@ Things to know when placing nodes:
 - **`column` only moves that node.** The nodes it flows into are placed as if it were still in its automatic column, so check that they still sit to the right of it.
 - **Flows can't loop back.** A loop such as A → B → A makes the constructor throw an error.
 
+## Flow shapes: `b` or `th`
+
+Each flow can be drawn in two ways, set with `render` (per flow, or for all flows in `flowBaseConfig`):
+
+| | `b` (default) | `th` |
+| --- | --- | --- |
+| Shape | Two curves shifted vertically, filled in between | Ribbon of constant perpendicular thickness |
+| Value accuracy | The vertical height equals the value along the whole flow | The width across the flow equals the value |
+| Steep flows | Look thinner in the middle (pinched) | Keep their thickness |
+| Overlap of flows | Only where flows cross anyway, e.g. a flow that skips columns | More often, on steep or thick flows |
+
+Both are exact, measured in a different direction. `b` is the safe choice: it doesn't add overlap and works well in most charts. `th` looks more correct for a few thin flows with relatively large slopes: there `b` visibly pinches, while `th` keeps the width the eye reads as the value.
+
+`th` is named after the offset-curve method of Tiller and Hanson ([Offsets of Two-Dimensional Profiles](https://ieeexplore.ieee.org/abstract/document/4055919), *IEEE Computer Graphics and Applications* 4(9), 1984), but uses a simpler variant: it offsets 30 points along the curve and joins them with straight lines. At chart sizes this looks the same.
+
 ## Options
 
 ### Chart (second argument of `new Sankey(containerId, config)`)
@@ -201,7 +216,7 @@ Things to know when placing nodes:
 | `className` | Extra class on the `<path>`. |
 | `style` | CSS properties for this flow, e.g. `{ fill: "red" }`. |
 | `tooltip` | String (HTML), `(flow) => string`, or `null` for no tooltip. The default is `"<from> → <to>: <value>"`. |
-| `render` | `"b"` for a cubic bezier band (default), or `"th"` for a constant-thickness ribbon (Tiller-Hanson). `"th"` can show artifacts on thick, steep flows. |
+| `render` | `"b"` (default) or `"th"`, see [Flow shapes](#flow-shapes-b-or-th). |
 
 ### Node
 
@@ -256,6 +271,10 @@ npm run prettier
 
 The source is TypeScript in [`src/`](src), and the bundles in [`dist/`](dist) are committed. Pushing to `main` publishes `dist/` and the examples to GitHub Pages, so every site that imports the Pages URL gets the new build right away.
 
+## Credits
+
+The node layout (column placement, stacking and padding) is adapted from [chartjs-chart-sankey](https://github.com/kurkle/chartjs-chart-sankey) by Jukka Kurkela (MIT). `relativeTo`, the SVG rendering and the interaction were added in SankeyRiver.
+
 ## License
 
-[MIT](LICENSE) © Deltares
+[MIT](LICENSE) © Deltares. Includes code from chartjs-chart-sankey, © Jukka Kurkela, MIT; its notice is in [LICENSE](LICENSE).
