@@ -249,7 +249,7 @@ function createSVG(config, width, height) {
   svg2.appendChild(groupLabels);
   return { svg: svg2, groupNodes, groupFlows, groupLabels };
 }
-function renderLabels(svg2, nodes, config, maxX) {
+function renderLabels(labelGroup, nodes, config, maxX) {
   for (const node2 of nodes.values()) {
     if (!node2.label.text) {
       node2.label.width = 0;
@@ -260,7 +260,7 @@ function renderLabels(svg2, nodes, config, maxX) {
       id: `label-node-${node2.idClean}`,
       class: classNamesForColumn(node2, maxX, "label")
     });
-    svg2.appendChild(group);
+    labelGroup.appendChild(group);
     const text = createElement("text", {
       "font-size": `${config.fontsize}pt`
     });
@@ -574,7 +574,7 @@ var Sankey = class {
     this.nodes = nodes;
     this.flows = flows;
     this.maxX = calculateNodeXPosition(this.nodes, this.flows);
-    this.maxY = calculateNodeYPosition(this.nodes, this.maxX, this.config);
+    this.maxY = calculateNodeYPosition(this.nodes, this.maxX);
     const padding = this.maxY / this.height * this.config.padding;
     this.maxY = addPadding(this.nodes, padding, this.maxX);
     sortFlows(this.nodes);

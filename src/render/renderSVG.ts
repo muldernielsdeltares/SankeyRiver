@@ -32,20 +32,20 @@ export function createSVG(
         width,
         height,
         id: config.id,
-    })
+    }) as SVGSVGElement
 
-    const groupNodes = createElement("g", { id: "nodes" })
+    const groupNodes = createElement("g", { id: "nodes" }) as SVGGElement
     svg.appendChild(groupNodes)
-    const groupFlows = createElement("g", { id: "flows" })
+    const groupFlows = createElement("g", { id: "flows" }) as SVGGElement
     svg.appendChild(groupFlows)
-    const groupLabels = createElement("g", { id: "labels" })
+    const groupLabels = createElement("g", { id: "labels" }) as SVGGElement
     svg.appendChild(groupLabels)
 
     return { svg, groupNodes, groupFlows, groupLabels }
 }
 
 export function renderLabels(
-    svg: SVGSVGElement,
+    labelGroup: SVGGElement,
     nodes: Map<string, Node>,
     config: SankeyConfig,
     maxX: number,
@@ -61,7 +61,7 @@ export function renderLabels(
             id: `label-node-${node.idClean}`,
             class: classNamesForColumn(node, maxX, "label"),
         })
-        svg.appendChild(group)
+        labelGroup.appendChild(group)
 
         const text = createElement("text", {
             "font-size": `${config.fontsize}pt`,
@@ -137,8 +137,8 @@ export function scaling(
 
 export function renderNodesFlows(
     svg: SVGSVGElement,
-    groupNodes: SVGSVGElement,
-    groupFlows: SVGSVGElement,
+    groupNodes: SVGGElement,
+    groupFlows: SVGGElement,
     nodes: Map<string, Node>,
     flows: Flow[],
     config: SankeyConfig,

@@ -80,7 +80,7 @@ export class Sankey {
         this.maxX = calculateNodeXPosition(this.nodes, this.flows)
 
         //node y position
-        this.maxY = calculateNodeYPosition(this.nodes, this.maxX, this.config)
+        this.maxY = calculateNodeYPosition(this.nodes, this.maxX)
         const padding = (this.maxY / this.height) * this.config.padding
         this.maxY = addPadding(this.nodes, padding, this.maxX)
 
