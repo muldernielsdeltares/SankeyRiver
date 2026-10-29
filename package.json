@@ -6,14 +6,20 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "esbuild src/Sankey.ts --bundle --outfile=dist/sankey.js --format=esm",
     "build:min": "esbuild src/Sankey.ts --bundle --minify --outfile=dist/sankey.min.js --format=esm",
-    "dev": "esbuild src/Sankey.ts --bundle --outfile=dist/sankey.js --format=esm --watch"
+    "dev": "esbuild src/Sankey.ts --bundle --outfile=dist/sankey.js --format=esm --watch",
+    "lint": "npx eslint",
+    "prettier": "npx prettier --write \"src/**/*.ts\""
   },
   "keywords": [],
   "author": "Niels Mulder",
-  "license": "ISC",
+  "license": "MIT",
   "description": "",
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
     "esbuild": "^0.25.3",
-    "typescript": "^5.8.3"
+    "eslint": "^9.39.1",
+    "prettier": "3.6.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.47.0"
   }
 }

@@ -1,38 +1,47 @@
-import { Flow } from '../models/Flow';
-import { Node } from '../models/Node';
+import { Flow } from "../models/Flow"
+import { Node } from "../models/Node"
+import { SankeyConfig } from "../Sankey"
 
-export function generateBaseStyles(config) {
-    return `rect[id^='node-']{fill:#777}\n`+
-        `path[id^='flow-']{opacity:0.6;fill:#ddd;&:hover{opacity:1}}\n`+
-        `path.flowvalue-zero{stroke:#ddd;stroke-width:1}\n`+
-        `g[id^='label-node']{pointer-events:none;rect{fill:#fff}}\n`+
-        `*{font-size:${config.fontsize}pt}`
+// Default styles have zero specificity (:where), so any user CSS overrides them
+export function generateBaseStyles(config: SankeyConfig) {
+    const svg = `svg#${config.id}`
+    return (
+        `:where(${svg}) {font-size:${config.fontsize}pt}\n` +
+        `:where(${svg} rect[id^='node-']) {fill:#777}\n` +
+        `:where(${svg} path[id^='flow-']) {opacity:0.6;fill:#ddd}\n` +
+        `:where(${svg} path[id^='flow-']:hover) {opacity:1}\n` +
+        `:where(${svg} path.flowvalue-zero) {stroke:#ddd;stroke-width:1}\n` +
+        `:where(${svg} g[id^='label-node']) {pointer-events:none}\n` +
+        `:where(${svg} g[id^='label-node'] rect) {fill:#fff}\n`
+    )
 }
-export function generateStyles(nodes: Map<string, Node>, flows: Flow[]): string {
-    let styles = '';
+export function generateStyles(
+    nodeMap: Map<string, Node>,
+    flows: Flow[],
+    config: SankeyConfig,
+): string {
+    let styles = ""
 
-    for (const node of nodes.values()) {
-        const styleStr = objectToCSS(node.style);
+    for (const node of nodeMap.values()) {
+        const styleStr = objectToCSS(node.style)
         if (styleStr) {
-            styles += `#node-${node.idClean} { ${styleStr} }\n`;
+            styles += `svg#${config.id} #node-${node.idClean} { ${styleStr} }\n`
         }
     }
 
     for (const flow of flows) {
-        const styleStr = objectToCSS(flow.style);
+        const styleStr = objectToCSS(flow.style)
         if (styleStr) {
-            styles += `#flow-${flow.idClean} { ${styleStr} }\n`;
+            styles += `svg#${config.id} #flow-${flow.idClean} { ${styleStr} }\n`
         }
     }
 
-    return styles;
+    return styles
 }
 
 function objectToCSS(style?: Record<string, string>): string {
     if (!style) return
-    // @ts-ignore
     return Object.entries(style)
-        // @ts-ignore
         .map(([k, v]) => `${k}:${v};`)
-        .join(' ');
+        .join(" ")
 }

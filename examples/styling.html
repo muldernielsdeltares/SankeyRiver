@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>SankeyRiver - styling</title>
+    <style>
+        body { background: #f1f5f9; }
+        #chart { width: 800px; height: 420px; background: #0f172a; border-radius: 12px; }
+
+        /* everything in the chart is plain SVG, so plain CSS styles it */
+        #chart svg { font-family: Georgia, serif; }
+        #chart rect[id^="node-"] { fill: #38bdf8; rx: 3px; }
+        #chart rect.node-column-0 { fill: #a78bfa; }
+        #chart rect.node-column-last { fill: #f472b6; }
+
+        #chart path[id^="flow-"] { fill: url(#flow-gradient); opacity: 0.5; transition: opacity 0.2s; }
+        #chart path[id^="flow-"]:hover { opacity: 0.95; }
+        #chart path.loss { fill: #f87171; }
+
+        #chart g[id^="label-node"] rect { fill: none; }
+        #chart g[id^="label-node"] text { fill: #e2e8f0; font-style: italic; }
+    </style>
+</head>
+<body>
+<!-- gradient used by the flows above -->
+<svg width="0" height="0" style="position: absolute">
+    <defs>
+        <linearGradient id="flow-gradient">
+            <stop offset="0%" stop-color="#a78bfa" />
+            <stop offset="100%" stop-color="#38bdf8" />
+        </linearGradient>
+    </defs>
+</svg>
+
+<div id="chart"></div>
+
+<script type="module">
+    import { Sankey } from "../dist/sankey.js"
+
+    new Sankey("chart", {
+        flows: [
+            { from: "Rain", to: "Soil", value: 60 },
+            { from: "Rain", to: "Runoff", value: 25 },
+            { from: "Soil", to: "Evaporation", value: 25, className: "loss" },
+            { from: "Soil", to: "Groundwater", value: 35 },
+            { from: "Runoff", to: "River", value: 25 },
+        ],
+        flowBaseConfig: {
+            tooltip: (flow) => `<b>${flow.from}</b> &rarr; <b>${flow.to}</b><br>${flow.value} mm`,
+        },
+        nodeBaseConfig: {
+            width: 12,
+            label: { text: (node) => `${node.id}\n${node.size} mm` },
+        },
+        margin: [20, 20, 20, 20],
+    })
+</script>
+</body>
+</html>

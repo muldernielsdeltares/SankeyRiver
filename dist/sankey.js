@@ -5,15 +5,18 @@ function calculateNodeXPosition(nodeMap, data) {
   while (idsPlace.size) {
     const column = [];
     for (const id of idsPlace) {
-      const node2 = nodeMap.get(id);
-      const allIn = node2.in.map((flow) => flow.from);
+      const node = nodeMap.get(id);
+      const allIn = node.in.map((flow) => flow.from);
       if (allIn.every((id2) => nodeMap.get(id2).x !== void 0)) {
         column.push(id);
       }
     }
+    if (!column.length) {
+      throw new Error(`Sankey: flows contain a loop between ${[...idsPlace].join(", ")}`);
+    }
     for (const id of column) {
-      const node2 = nodeMap.get(id);
-      node2.x = node2.column || x;
+      const node = nodeMap.get(id);
+      node.x = node.column ?? x;
       idsPlace.delete(id);
     }
     x++;
@@ -22,44 +25,44 @@ function calculateNodeXPosition(nodeMap, data) {
   const ids = [...nodeMap.keys()];
   const from = new Set(data.map((flow) => flow.from));
   ids.filter((id) => !from.has(id)).forEach((id) => {
-    const node2 = nodeMap.get(id);
-    node2.x = node2.column || maxX;
-    maxX = Math.max(maxX, node2.x);
+    const node = nodeMap.get(id);
+    node.x = node.column ?? maxX;
+    maxX = Math.max(maxX, node.x);
   });
   return maxX;
 }
-function calculateNodeYPosition(nodes, maxX, config) {
+function calculateNodeYPosition(nodes, maxX) {
   let maxY = 0;
   const nodesSorted = [...nodes.values()].sort((a, b) => (a.sorting ?? 0) - (b.sorting ?? 0));
   for (let x = 0; x <= maxX; x++) {
     let y = 0;
-    const nodesArray = nodesSorted.filter((node2) => node2.x === x);
-    for (const node2 of nodesArray) {
-      const relativeToId = node2.relativeTo?.id;
+    const nodesArray = nodesSorted.filter((node) => node.x === x);
+    for (const node of nodesArray) {
+      const relativeToId = node.relativeTo?.id;
       let relativeTo = relativeToId ? nodes.get(relativeToId) : null;
       if (!relativeTo || typeof relativeTo.y === "undefined") {
         relativeTo = null;
       }
-      if (relativeTo) {
-        node2.y = relativeTo.y + (node2.relativeTo.y1 ?? 0) * relativeTo.size + (node2.relativeTo.y2 ?? 0) * node2.size;
+      if (relativeTo && node.relativeTo) {
+        node.y = relativeTo.y + (node.relativeTo.y1 ?? 0) * relativeTo.size + (node.relativeTo.y2 ?? 0) * node.size;
       } else {
-        node2.y = y;
+        node.y = y;
       }
-      y = node2.y + node2.size;
+      y = node.y + node.size;
     }
     maxY = Math.max(y, maxY);
   }
   return maxY;
 }
 function sortFlows(nodes) {
-  for (const node2 of nodes.values()) {
+  for (const node of nodes.values()) {
     let offset = 0;
-    node2.in.sort((a, b) => nodes.get(a.from).y - nodes.get(b.from).y).forEach((flow, i) => {
+    node.in.sort((a, b) => nodes.get(a.from).y - nodes.get(b.from).y).forEach((flow) => {
       flow.yOffsetTo = offset;
       offset += flow.value;
     });
     offset = 0;
-    node2.out.sort((a, b) => nodes.get(a.to).y - nodes.get(b.to).y).forEach((flow, i) => {
+    node.out.sort((a, b) => nodes.get(a.to).y - nodes.get(b.to).y).forEach((flow) => {
       flow.yOffsetFrom = offset;
       offset += flow.value;
     });
@@ -71,49 +74,43 @@ function addPadding(nodes, padding, maxX) {
   const nodesSorted = [...nodes.values()].sort((a, b) => a.y - b.y);
   for (let x = 0; x <= maxX; x++) {
     let paddings = 0;
-    const nodes2 = nodesSorted.filter((node2) => node2.x === x);
-    for (const node2 of nodes2) {
-      if (node2.relativeTo) {
+    const nodes2 = nodesSorted.filter((node) => node.x === x);
+    for (const node of nodes2) {
+      if (node.relativeTo) {
         paddings = 0;
       }
-      if (node2.paddings) {
-        paddings = node2.paddings;
+      if (node.paddings) {
+        paddings = node.paddings;
       }
-      node2.y += paddings * padding;
+      node.y += paddings * padding;
       paddings += 1;
-      maxY = Math.max(maxY, node2.y + node2.size);
-      minY = Math.min(minY, node2.y);
+      maxY = Math.max(maxY, node.y + node.size);
+      minY = Math.min(minY, node.y);
     }
   }
   if (minY < 0) {
-    for (const node2 of nodes.values()) {
-      node2.y -= minY;
+    for (const node of nodes.values()) {
+      node.y -= minY;
     }
   }
   return maxY - minY;
 }
 function nodeLabelSpaceAllocation(nodes, config, maxX) {
   const maxNodeWidth = /* @__PURE__ */ new Map();
-  for (const node2 of nodes.values()) {
-    const x = node2.x;
-    maxNodeWidth.set(x, Math.max(maxNodeWidth.get(x) ?? 0, node2.width));
-    let position = node2.label.position;
-    if (!node2.label.position) {
+  for (const node of nodes.values()) {
+    const x = node.x;
+    maxNodeWidth.set(x, Math.max(maxNodeWidth.get(x) ?? 0, node.width));
+    let position = node.label.position;
+    if (!node.label.position) {
       position = x === 0 ? "left" : x === maxX ? "right" : "center";
-      node2.label.position = position;
+      node.label.position = position;
     }
     if (x === 0 && position !== "right") {
-      const left = position === "center" ? node2.label.width * 0.5 - node2.width / 2 : node2.label.width;
-      config.labelSpaceLeft = Math.max(
-        config.labelSpaceLeft ?? 0,
-        left
-      );
+      const left = position === "center" ? node.label.width * 0.5 - node.width / 2 : node.label.width;
+      config.labelSpaceLeft = Math.max(config.labelSpaceLeft ?? 0, left);
     } else if (x === maxX && position !== "left") {
-      const right = position === "center" ? node2.label.width * 0.5 - node2.width / 2 : node2.label.width;
-      config.labelSpaceRight = Math.max(
-        config.labelSpaceRight ?? 0,
-        right
-      );
+      const right = position === "center" ? node.label.width * 0.5 - node.width / 2 : node.label.width;
+      config.labelSpaceRight = Math.max(config.labelSpaceRight ?? 0, right);
     }
   }
   return maxNodeWidth;
@@ -121,25 +118,29 @@ function nodeLabelSpaceAllocation(nodes, config, maxX) {
 
 // src/render/styles.ts
 function generateBaseStyles(config) {
-  return `rect[id^='node-']{fill:#777}
-path[id^='flow-']{opacity:0.6;fill:#ddd;&:hover{opacity:1}}
-path.flowvalue-zero{stroke:#ddd;stroke-width:1}
-g[id^='label-node']{pointer-events:none;rect{fill:#fff}}
-*{font-size:${config.fontsize}pt}`;
+  const svg = `svg#${config.id}`;
+  return `:where(${svg}) {font-size:${config.fontsize}pt}
+:where(${svg} rect[id^='node-']) {fill:#777}
+:where(${svg} path[id^='flow-']) {opacity:0.6;fill:#ddd}
+:where(${svg} path[id^='flow-']:hover) {opacity:1}
+:where(${svg} path.flowvalue-zero) {stroke:#ddd;stroke-width:1}
+:where(${svg} g[id^='label-node']) {pointer-events:none}
+:where(${svg} g[id^='label-node'] rect) {fill:#fff}
+`;
 }
-function generateStyles(nodes, flows) {
+function generateStyles(nodeMap, flows, config) {
   let styles = "";
-  for (const node2 of nodes.values()) {
-    const styleStr = objectToCSS(node2.style);
+  for (const node of nodeMap.values()) {
+    const styleStr = objectToCSS(node.style);
     if (styleStr) {
-      styles += `#node-${node2.idClean} { ${styleStr} }
+      styles += `svg#${config.id} #node-${node.idClean} { ${styleStr} }
 `;
     }
   }
   for (const flow of flows) {
     const styleStr = objectToCSS(flow.style);
     if (styleStr) {
-      styles += `#flow-${flow.idClean} { ${styleStr} }
+      styles += `svg#${config.id} #flow-${flow.idClean} { ${styleStr} }
 `;
     }
   }
@@ -151,9 +152,9 @@ function objectToCSS(style) {
 }
 
 // src/render/bezier.ts
-function generateFlowPath(nodes, flow, scaleX, scaleY) {
-  const fromNode = nodes.get(flow.from);
-  const toNode = nodes.get(flow.to);
+function generateFlowPath(nodeMap, flow, scaleX, scaleY) {
+  const fromNode = nodeMap.get(flow.from);
+  const toNode = nodeMap.get(flow.to);
   const flowMidValue = flow.value / 2;
   const halfThickness = flowMidValue * scaleY;
   const fromY = fromNode.y_ + (flowMidValue + flow.yOffsetFrom) * scaleY;
@@ -234,47 +235,45 @@ function offsetPoint(p, normal, width) {
 var svgNS = "http://www.w3.org/2000/svg";
 var createElement = (qualifiedName, attributes) => {
   const el = document.createElementNS(svgNS, qualifiedName);
-  Object.entries(attributes).forEach(
-    ([k, v]) => {
-      if (v) {
-        el.setAttribute(k, String(v));
-      }
+  Object.entries(attributes).forEach(([k, v]) => {
+    if (v) {
+      el.setAttribute(k, String(v));
     }
-  );
+  });
   return el;
 };
 function createSVG(config, width, height) {
-  const svg2 = createElement("svg", {
+  const svg = createElement("svg", {
     width,
     height,
     id: config.id
   });
   const groupNodes = createElement("g", { id: "nodes" });
-  svg2.appendChild(groupNodes);
+  svg.appendChild(groupNodes);
   const groupFlows = createElement("g", { id: "flows" });
-  svg2.appendChild(groupFlows);
+  svg.appendChild(groupFlows);
   const groupLabels = createElement("g", { id: "labels" });
-  svg2.appendChild(groupLabels);
-  return { svg: svg2, groupNodes, groupFlows, groupLabels };
+  svg.appendChild(groupLabels);
+  return { svg, groupNodes, groupFlows, groupLabels };
 }
-function renderLabels(svg2, nodes, config, maxX) {
-  for (const node2 of nodes.values()) {
-    if (!node2.label.text) {
-      node2.label.width = 0;
-      node2.label.height = 0;
+function renderLabels(labelGroup, nodes, config, maxX) {
+  for (const node of nodes.values()) {
+    if (!node.label.text) {
+      node.label.width = 0;
+      node.label.height = 0;
       continue;
     }
     const group = createElement("g", {
-      id: `label-node-${node2.idClean}`,
-      class: classNamesForColumn(node2, maxX, "label")
+      id: `label-node-${node.idClean}`,
+      class: classNamesForColumn(node, maxX, "label")
     });
-    svg2.appendChild(group);
+    labelGroup.appendChild(group);
     const text = createElement("text", {
       "font-size": `${config.fontsize}pt`
     });
     group.appendChild(text);
-    if (typeof node2.label.text === "string") {
-      const lines = node2.label.text.split("\n");
+    if (typeof node.label.text === "string") {
+      const lines = node.label.text.split("\n");
       for (const line of lines) {
         const tspan = createElement("tspan", {
           x: config.labelPadding,
@@ -286,22 +285,20 @@ function renderLabels(svg2, nodes, config, maxX) {
       }
     }
     const bbox = text.getBBox();
-    node2.label.width = bbox.width + 2 * config.labelPadding;
-    node2.label.height = bbox.height + 2 * config.labelPadding;
+    node.label.width = bbox.width + 2 * config.labelPadding;
+    node.label.height = bbox.height + 2 * config.labelPadding;
     const rect = createElement("rect", {
-      width: node2.label.width,
-      height: node2.label.height,
+      width: node.label.width,
+      height: node.label.height,
       "font-size": `${config.fontsize}pt`
     });
     group.insertBefore(rect, text);
   }
 }
-function styling(svg2, nodes, flows, config) {
+function styling(svg, nodes, flows, config) {
   const styleTag = document.createElementNS(svgNS, "style");
-  styleTag.textContent = `svg#${config.id}{
-${generateBaseStyles(config)}
-${generateStyles(nodes, flows)}}`;
-  svg2.appendChild(styleTag);
+  styleTag.textContent = generateBaseStyles(config) + generateStyles(nodes, flows, config);
+  svg.appendChild(styleTag);
 }
 function scaling(nodes, flows, config, width, height, maxX, maxY, maxNodeWidth) {
   const labelSpace = config.labelSpaceLeft + config.labelSpaceRight;
@@ -309,44 +306,44 @@ function scaling(nodes, flows, config, width, height, maxX, maxY, maxNodeWidth) 
   const scaleY = (height - config.margin[0] - config.margin[2]) / maxY;
   config.scaleX = scaleX;
   config.scaleY = scaleY;
-  for (const node2 of nodes.values()) {
-    const shift = node2.x === 0 ? 0 : (maxNodeWidth.get(node2.x) - node2.width) / (node2.x === maxX ? 1 : 2);
-    node2.x_ = node2.x * scaleX + config.labelSpaceLeft + shift + config.margin[1];
-    node2.y_ = node2.y * scaleY + config.margin[0];
-    node2.size_ = node2.size * scaleY;
+  for (const node of nodes.values()) {
+    const shift = node.x === 0 ? 0 : (maxNodeWidth.get(node.x) - node.width) / (node.x === maxX ? 1 : 2);
+    node.x_ = node.x * scaleX + config.labelSpaceLeft + shift + config.margin[3];
+    node.y_ = node.y * scaleY + config.margin[0];
+    node.size_ = node.size * scaleY;
   }
 }
-function renderNodesFlows(svg2, groupNodes, groupFlows, nodes, flows, config, width, height, maxX, maxY, clear = false) {
+function renderNodesFlows(svg, groupNodes, groupFlows, nodes, flows, config, width, height, maxX, maxY, clear = false) {
   if (clear) {
     groupNodes.innerHTML = "";
     groupFlows.innerHTML = "";
   }
   const scaleX = config.scaleX;
   const scaleY = config.scaleY;
-  for (const node2 of nodes.values()) {
-    if (node2.width > 0 && node2.size_ > 0) {
-      const tooltip = typeof node2.tooltip === "function" ? node2.tooltip(node2) : node2.tooltip === null ? null : node2.tooltip || `${node2.label.text || ""} (${node2.size})`;
+  for (const node of nodes.values()) {
+    if (node.width > 0 && node.size_ > 0) {
+      const tooltip = typeof node.tooltip === "function" ? node.tooltip(node) : node.tooltip === null ? null : node.tooltip || `${node.label.text || ""} (${node.size})`;
       const rect = createElement("rect", {
-        id: `node-${node2.idClean}`,
-        x: node2.x_,
-        y: node2.y_,
-        width: node2.width,
-        height: node2.size_,
-        class: classNamesForColumn(node2, maxX, "node", node2.className),
+        id: `node-${node.idClean}`,
+        x: node.x_,
+        y: node.y_,
+        width: node.width,
+        height: node.size_,
+        class: classNamesForColumn(node, maxX, "node", node.className),
         "data-tooltip": tooltip
       });
       groupNodes.appendChild(rect);
     }
-    const labelGroup = svg2.getElementById(`label-node-${node2.idClean}`);
+    const labelGroup = svg.getElementById(`label-node-${node.idClean}`);
     if (!labelGroup) continue;
-    let y = node2.y_ + node2.size_ / 2 - node2.label.height / 2 - config.fontsize * 0.3;
+    const y = node.y_ + node.size_ / 2 - node.label.height / 2 - config.fontsize * 0.3;
     let x;
-    if (node2.label.position === "left") {
-      x = node2.x_ - node2.label.width;
-    } else if (node2.label.position === "right") {
-      x = node2.x_ + node2.width;
+    if (node.label.position === "left") {
+      x = node.x_ - node.label.width;
+    } else if (node.label.position === "right") {
+      x = node.x_ + node.width;
     } else {
-      x = node2.x_ + node2.width / 2 - node2.label.width / 2;
+      x = node.x_ + node.width / 2 - node.label.width / 2;
     }
     labelGroup.setAttribute("transform", `translate(${x}, ${y})`);
   }
@@ -365,11 +362,11 @@ function renderNodesFlows(svg2, groupNodes, groupFlows, nodes, flows, config, wi
     groupFlows.appendChild(path);
   }
 }
-function classNamesForColumn(node2, maxX, label, extra = null) {
-  let classes = [`${label}-column-${node2.x}`];
-  if (node2.x === maxX) {
+function classNamesForColumn(node, maxX, label, extra = null) {
+  const classes = [`${label}-column-${node.x}`];
+  if (node.x === maxX) {
     classes.push(`${label}-column-last`);
-  } else if (node2.x !== 0) {
+  } else if (node.x !== 0) {
     classes.push(`${label}-column-middle`);
   }
   if (extra) {
@@ -379,57 +376,50 @@ function classNamesForColumn(node2, maxX, label, extra = null) {
 }
 
 // src/render/tooltip.ts
-var tooltipId = "";
-var tooltipRect;
-var viewportWidth = window.innerWidth;
-var viewportHeight = window.innerHeight;
 function makeTooltip(containerId, config) {
-  const el = document.createElement("div");
-  tooltipId = `${containerId}-tooltip`;
+  const tooltipId = `${containerId}-tooltip`;
+  const el = document.getElementById(tooltipId) ?? document.createElement("div");
   el.setAttribute("id", tooltipId);
-  el.setAttribute("style", `font-size:${config.fontsize}pt;background:#000;border-radius:5px;padding:5px;color:#fff;position:absolute;display:none;`);
-  document.body.appendChild(el);
+  el.setAttribute(
+    "style",
+    `font-size:${config.fontsize}pt;background:#000;border-radius:5px;padding:5px;color:#fff;position:absolute;display:none;`
+  );
+  if (!el.isConnected) document.body.appendChild(el);
+  return el;
 }
-function finalizeTooltips() {
-  document.querySelectorAll("[data-tooltip]").forEach((el) => {
+function finalizeTooltips(svg, tooltip) {
+  svg.querySelectorAll("[data-tooltip]").forEach((el) => {
     const text = el.getAttribute("data-tooltip");
     if (text) {
-      el.addEventListener("mouseenter", openTooltip(text));
-      el.addEventListener("mousemove", moveTooltip());
-      el.addEventListener("mouseleave", closeTooltip());
+      el.addEventListener("mouseenter", openTooltip(tooltip, text));
+      el.addEventListener("mousemove", moveTooltip(tooltip));
+      el.addEventListener("mouseleave", closeTooltip(tooltip));
     }
   });
 }
-function getTooltip() {
-  return document.getElementById(tooltipId);
-}
-function openTooltip(text) {
+function openTooltip(tooltip, text) {
   return () => {
-    let tooltip = getTooltip();
     tooltip.innerHTML = text;
     tooltip.style.display = "block";
-    tooltipRect = tooltip.getBoundingClientRect();
   };
 }
-function moveTooltip() {
+function moveTooltip(tooltip) {
   return (event) => {
-    let tooltip = getTooltip();
-    tooltipRect = tooltip.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
     let x = event.clientX + window.scrollX + 10;
     let y = event.clientY + window.scrollY + 10;
-    if (event.clientX + tooltipRect.width + 20 > viewportWidth) {
+    if (event.clientX + tooltipRect.width + 20 > window.innerWidth) {
       x = event.clientX + window.scrollX - tooltipRect.width - 10;
     }
-    if (event.clientY + tooltipRect.height + 20 > viewportHeight) {
+    if (event.clientY + tooltipRect.height + 20 > window.innerHeight) {
       y = event.clientY + window.scrollY - tooltipRect.height - 10;
     }
     tooltip.style.left = x + "px";
     tooltip.style.top = y + "px";
   };
 }
-function closeTooltip() {
-  return function() {
-    let tooltip = getTooltip();
+function closeTooltip(tooltip) {
+  return () => {
     tooltip.style.display = "none";
   };
 }
@@ -450,7 +440,7 @@ function enrichData(config) {
   });
   const nodes = /* @__PURE__ */ new Map();
   for (const id of nodeIds) {
-    const node2 = {
+    const node = {
       id,
       idClean: cleanString(id),
       in: [],
@@ -462,84 +452,99 @@ function enrichData(config) {
         ...nodeConfig[id]?.label
       }
     };
-    nodes.set(id, node2);
+    nodes.set(id, node);
   }
   for (const flow of flows) {
     nodes.get(flow.from).out.push(flow);
     nodes.get(flow.to).in.push(flow);
   }
-  for (let node2 of nodes.values()) {
-    node2.size = Math.max(
-      node2.in.reduce((a, i) => a + i.value, 0),
-      node2.out.reduce((a, i) => a + i.value, 0)
+  for (const node of nodes.values()) {
+    node.size = Math.max(
+      node.in.reduce((a, i) => a + i.value, 0),
+      node.out.reduce((a, i) => a + i.value, 0)
     );
-    node2.label.text = typeof node2.label.text === "function" ? node2.label.text(node2) : node2.label.text === null ? null : node2.label.text || node2.id;
+    node.label.text = typeof node.label.text === "function" ? node.label.text(node) : node.label.text === null ? null : node.label.text || node.id;
   }
   return { nodes, flows };
 }
 
 // src/utils/drag.ts
-var svg;
-var selected = null;
-var selectedLabel;
-var selectedFlows = [];
-var node;
-var offsetNode;
-var offsetLabel;
-var getMousePosition = (event) => {
-  const pt = svg.createSVGPoint();
-  pt.x = event.clientX;
-  pt.y = event.clientY;
-  const cursor = pt.matrixTransform(svg.getScreenCTM()?.inverse());
-  return { x: cursor.x, y: cursor.y };
-};
-function drag(svgEl, nodes, scaleX, scaleY, groupFlows) {
-  svg = svgEl;
+var documentListeners = /* @__PURE__ */ new Map();
+function drag(svg, nodeMap, scaleX, scaleY, groupFlows) {
+  let selected = null;
+  let selectedLabel = null;
+  let selectedFlows = [];
+  let node;
+  let offsetNode;
+  let offsetLabel;
+  const getMousePosition = (event) => {
+    const pt = svg.createSVGPoint();
+    pt.x = event.clientX;
+    pt.y = event.clientY;
+    const cursor = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+    return { x: cursor.x, y: cursor.y };
+  };
   const nodeElements = svg.querySelectorAll("rect[id^='node-']");
   for (const rect of nodeElements) {
     rect.addEventListener("mousedown", (event) => {
       event.preventDefault();
       selected = rect;
+      selectedFlows = [];
       const mousePos = getMousePosition(event);
       const rectX = Number(rect.getAttribute("x"));
       const rectY = Number(rect.getAttribute("y"));
       offsetNode = { x: mousePos.x - rectX, y: mousePos.y - rectY };
-      const nodeId = selected.getAttribute("id");
-      node = [...nodes.values()].find((n) => n.idClean === nodeId.replace("node-", ""));
+      const nodeId = rect.getAttribute("id");
+      node = [...nodeMap.values()].find((n) => n.idClean === nodeId.replace("node-", ""));
       selectedLabel = svg.getElementById(`label-${nodeId}`);
       if (selectedLabel) {
         const labelXY = selectedLabel.getAttribute("transform").slice(10, -1).split(",").map(parseFloat);
-        offsetLabel = { x: mousePos.x - labelXY[0], y: mousePos.y - labelXY[1] };
+        offsetLabel = {
+          x: mousePos.x - labelXY[0],
+          y: mousePos.y - labelXY[1]
+        };
       }
       for (const flow of node.in.concat(node.out)) {
         const element = svg.getElementById(`flow-${flow.idClean}`);
         if (element) {
-          selectedFlows.push({
-            element: svg.getElementById(`flow-${flow.idClean}`),
-            flow
-          });
+          selectedFlows.push({ element, flow });
           groupFlows.appendChild(element);
         }
       }
     });
   }
-  document.addEventListener("mousemove", (event) => {
-    if (!selected) return;
-    const { x, y } = getMousePosition(event);
-    node.x_ = x - offsetNode.x;
-    node.y_ = y - offsetNode.y;
-    selected.setAttribute("x", String(x - offsetNode.x));
-    selected.setAttribute("y", String(y - offsetNode.y));
-    if (selectedLabel) {
-      selectedLabel.setAttribute("transform", `translate(${x - offsetLabel.x}, ${y - offsetLabel.y})`);
-    }
-    for (const f of selectedFlows) {
-      f.element.setAttribute("d", generateFlowPath(nodes, f.flow, scaleX, scaleY));
-    }
-  });
-  document.addEventListener("mouseup", () => {
-    selected = null;
-  });
+  documentListeners.get(svg.id)?.abort();
+  const controller = new AbortController();
+  documentListeners.set(svg.id, controller);
+  document.addEventListener(
+    "mousemove",
+    (event) => {
+      if (!selected) return;
+      const { x, y } = getMousePosition(event);
+      node.x_ = x - offsetNode.x;
+      node.y_ = y - offsetNode.y;
+      selected.setAttribute("x", String(x - offsetNode.x));
+      selected.setAttribute("y", String(y - offsetNode.y));
+      if (selectedLabel) {
+        selectedLabel.setAttribute(
+          "transform",
+          `translate(${x - offsetLabel.x}, ${y - offsetLabel.y})`
+        );
+      }
+      for (const f of selectedFlows) {
+        f.element.setAttribute("d", generateFlowPath(nodeMap, f.flow, scaleX, scaleY));
+      }
+    },
+    { signal: controller.signal }
+  );
+  document.addEventListener(
+    "mouseup",
+    () => {
+      selected = null;
+      selectedFlows = [];
+    },
+    { signal: controller.signal }
+  );
 }
 
 // src/Sankey.ts
@@ -562,24 +567,48 @@ var Sankey = class {
     this.container.innerHTML = "";
     this.height = this.container.offsetHeight || 500;
     this.width = this.container.offsetWidth || 500;
-    const { svg: svg2, groupNodes, groupFlows, groupLabels } = createSVG(this.config, this.width, this.height);
-    this.container.appendChild(svg2);
-    makeTooltip(containerId, this.config);
+    const { svg, groupNodes, groupFlows, groupLabels } = createSVG(
+      this.config,
+      this.width,
+      this.height
+    );
+    this.container.appendChild(svg);
+    const tooltip = makeTooltip(containerId, this.config);
     const { nodes, flows } = enrichData(this.config);
     this.nodes = nodes;
     this.flows = flows;
     this.maxX = calculateNodeXPosition(this.nodes, this.flows);
-    this.maxY = calculateNodeYPosition(this.nodes, this.maxX, this.config);
+    this.maxY = calculateNodeYPosition(this.nodes, this.maxX);
     const padding = this.maxY / this.height * this.config.padding;
     this.maxY = addPadding(this.nodes, padding, this.maxX);
     sortFlows(this.nodes);
     renderLabels(groupLabels, this.nodes, this.config, this.maxX);
     this.maxNodeWidth = nodeLabelSpaceAllocation(this.nodes, this.config, this.maxX);
-    styling(svg2, this.nodes, this.flows, this.config);
-    scaling(this.nodes, this.flows, this.config, this.width, this.height, this.maxX, this.maxY, this.maxNodeWidth);
-    renderNodesFlows(svg2, groupNodes, groupFlows, this.nodes, this.flows, this.config, this.width, this.height, this.maxX, this.maxY);
-    finalizeTooltips();
-    drag(svg2, this.nodes, config.scaleX, config.scaleY, groupFlows);
+    styling(svg, this.nodes, this.flows, this.config);
+    scaling(
+      this.nodes,
+      this.flows,
+      this.config,
+      this.width,
+      this.height,
+      this.maxX,
+      this.maxY,
+      this.maxNodeWidth
+    );
+    renderNodesFlows(
+      svg,
+      groupNodes,
+      groupFlows,
+      this.nodes,
+      this.flows,
+      this.config,
+      this.width,
+      this.height,
+      this.maxX,
+      this.maxY
+    );
+    finalizeTooltips(svg, tooltip);
+    drag(svg, this.nodes, config.scaleX, config.scaleY, groupFlows);
   }
 };
 export {

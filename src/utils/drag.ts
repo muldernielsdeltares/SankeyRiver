@@ -1,92 +1,117 @@
-import {Node} from "../models/Node";
-import {Flow} from "../models/Flow";
-import {generateFlowPath} from "../render/bezier";
+import { Node } from "../models/Node"
+import { Flow } from "../models/Flow"
+import { generateFlowPath } from "../render/bezier"
 
-let svg:SVGSVGElement
-let selected: SVGRectElement | null = null;
-let selectedLabel: Element
-let selectedFlows: {element:Element, flow:Flow}[] = []
-let node: Node
-let offsetNode:{ x: number, y: number }
-let offsetLabel:{ x: number, y: number }
+//document listeners per svg id, so a re-render in the same container replaces the old ones
+const documentListeners = new Map<string, AbortController>()
 
-const getMousePosition = (event: MouseEvent) => {
-    const pt = svg.createSVGPoint();
-    pt.x = event.clientX;
-    pt.y = event.clientY;
-    const cursor = pt.matrixTransform(svg.getScreenCTM()?.inverse());
-    return { x: cursor.x, y: cursor.y };
-};
+export function drag(
+    svg: SVGSVGElement,
+    nodeMap: Map<string, Node>,
+    scaleX: number,
+    scaleY: number,
+    groupFlows: SVGGElement,
+) {
+    //drag state, kept per chart
+    let selected: SVGRectElement | null = null
+    let selectedLabel: Element | null = null
+    let selectedFlows: { element: Element; flow: Flow }[] = []
+    let node: Node
+    let offsetNode: { x: number; y: number }
+    let offsetLabel: { x: number; y: number }
 
-export function drag(svgEl, nodes, scaleX, scaleY, groupFlows) {
-    svg = svgEl
+    const getMousePosition = (event: MouseEvent) => {
+        const pt = svg.createSVGPoint()
+        pt.x = event.clientX
+        pt.y = event.clientY
+        const cursor = pt.matrixTransform(svg.getScreenCTM()?.inverse())
+        return { x: cursor.x, y: cursor.y }
+    }
+
     const nodeElements = svg.querySelectorAll<SVGRectElement>("rect[id^='node-']")
 
     for (const rect of nodeElements) {
         rect.addEventListener("mousedown", (event) => {
-            event.preventDefault();
-            selected = rect;
+            event.preventDefault()
+            selected = rect
+            selectedFlows = []
 
             //get offset
-            const mousePos = getMousePosition(event);
-            const rectX = Number(rect.getAttribute("x"));
-            const rectY = Number(rect.getAttribute("y"));
-            offsetNode = {x:mousePos.x - rectX, y:mousePos.y - rectY}
+            const mousePos = getMousePosition(event)
+            const rectX = Number(rect.getAttribute("x"))
+            const rectY = Number(rect.getAttribute("y"))
+            offsetNode = { x: mousePos.x - rectX, y: mousePos.y - rectY }
 
             //get node object
-            const nodeId = selected.getAttribute('id')
-            node = [...nodes.values()].find(n => n.idClean === nodeId.replace('node-',''))
+            const nodeId = rect.getAttribute("id")
+            node = [...nodeMap.values()].find((n) => n.idClean === nodeId.replace("node-", ""))
 
             //get label element
             selectedLabel = svg.getElementById(`label-${nodeId}`)
-            if(selectedLabel) {
-                const labelXY = selectedLabel.getAttribute('transform').slice(10, -1).split(',').map(parseFloat)
-                offsetLabel = {x:mousePos.x - labelXY[0], y:mousePos.y - labelXY[1]}
-            }
-
-            //get flow elements
-            for(const flow of node.in.concat(node.out)){
-                const element = svg.getElementById(`flow-${flow.idClean}`)
-                if(element) {
-                    selectedFlows.push({
-                        element: svg.getElementById(`flow-${flow.idClean}`),
-                        flow
-                    })
-                    //move element to bottom, so it is rendered on top of other flows
-                    groupFlows.appendChild(element);
+            if (selectedLabel) {
+                const labelXY = selectedLabel
+                    .getAttribute("transform")
+                    .slice(10, -1)
+                    .split(",")
+                    .map(parseFloat)
+                offsetLabel = {
+                    x: mousePos.x - labelXY[0],
+                    y: mousePos.y - labelXY[1],
                 }
             }
 
-
-
-        });
+            //get flow elements
+            for (const flow of node.in.concat(node.out)) {
+                const element = svg.getElementById(`flow-${flow.idClean}`)
+                if (element) {
+                    selectedFlows.push({ element, flow })
+                    //move element to bottom, so it is rendered on top of other flows
+                    groupFlows.appendChild(element)
+                }
+            }
+        })
     }
 
-    document.addEventListener("mousemove", (event) => {
-        if (!selected) return;
-        const {x, y} = getMousePosition(event);
+    documentListeners.get(svg.id)?.abort()
+    const controller = new AbortController()
+    documentListeners.set(svg.id, controller)
 
-        //update node object
-        node.x_ = x - offsetNode.x
-        node.y_ = y - offsetNode.y
+    document.addEventListener(
+        "mousemove",
+        (event) => {
+            if (!selected) return
+            const { x, y } = getMousePosition(event)
 
-        //move node element
-        selected.setAttribute("x", String(x - offsetNode.x));
-        selected.setAttribute("y", String(y - offsetNode.y));
+            //update node object
+            node.x_ = x - offsetNode.x
+            node.y_ = y - offsetNode.y
 
-        //move label element
-        if (selectedLabel) {
-            selectedLabel.setAttribute("transform", `translate(${x - offsetLabel.x}, ${y - offsetLabel.y})`);
-        }
+            //move node element
+            selected.setAttribute("x", String(x - offsetNode.x))
+            selected.setAttribute("y", String(y - offsetNode.y))
 
-        //adjust flows
-        for(const f of selectedFlows) {
-            f.element.setAttribute('d', generateFlowPath(nodes, f.flow, scaleX, scaleY))
-        }
+            //move label element
+            if (selectedLabel) {
+                selectedLabel.setAttribute(
+                    "transform",
+                    `translate(${x - offsetLabel.x}, ${y - offsetLabel.y})`,
+                )
+            }
 
-    });
+            //adjust flows
+            for (const f of selectedFlows) {
+                f.element.setAttribute("d", generateFlowPath(nodeMap, f.flow, scaleX, scaleY))
+            }
+        },
+        { signal: controller.signal },
+    )
 
-    document.addEventListener("mouseup", () => {
-        selected = null;
-    });
+    document.addEventListener(
+        "mouseup",
+        () => {
+            selected = null
+            selectedFlows = []
+        },
+        { signal: controller.signal },
+    )
 }
