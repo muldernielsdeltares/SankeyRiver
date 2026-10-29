@@ -17,9 +17,13 @@ export function calculateNodeXPosition(nodeMap: Map<string, Node>, data: Flow[])
             }
         }
 
+        if (!column.length) {
+            throw new Error(`Sankey: flows contain a loop between ${[...idsPlace].join(", ")}`)
+        }
+
         for (const id of column) {
             const node = nodeMap.get(id)!
-            node.x = node.column || x
+            node.x = node.column ?? x
             idsPlace.delete(id)
         }
 
@@ -33,7 +37,7 @@ export function calculateNodeXPosition(nodeMap: Map<string, Node>, data: Flow[])
     const from = new Set(data.map((flow) => flow.from))
     ids.filter((id) => !from.has(id)).forEach((id) => {
         const node = nodeMap.get(id)
-        node.x = node.column || maxX
+        node.x = node.column ?? maxX
         maxX = Math.max(maxX, node.x)
     })
 

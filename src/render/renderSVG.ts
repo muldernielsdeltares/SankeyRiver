@@ -101,7 +101,7 @@ export function styling(
     config: SankeyConfig,
 ) {
     const styleTag = document.createElementNS(svgNS, "style")
-    styleTag.textContent = `svg#${config.id}{\n${generateBaseStyles(config)}\n${generateStyles(nodes, flows)}}`
+    styleTag.textContent = generateBaseStyles(config) + generateStyles(nodes, flows, config)
     svg.appendChild(styleTag)
 }
 export function scaling(
@@ -129,7 +129,7 @@ export function scaling(
         const shift =
             node.x === 0 ? 0 : (maxNodeWidth.get(node.x) - node.width) / (node.x === maxX ? 1 : 2)
         //scaling
-        node.x_ = node.x * scaleX + config.labelSpaceLeft + shift + config.margin[1]
+        node.x_ = node.x * scaleX + config.labelSpaceLeft + shift + config.margin[3]
         node.y_ = node.y * scaleY + config.margin[0]
         node.size_ = node.size * scaleY
     }

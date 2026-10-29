@@ -11,9 +11,12 @@ function calculateNodeXPosition(nodeMap, data) {
         column.push(id);
       }
     }
+    if (!column.length) {
+      throw new Error(`Sankey: flows contain a loop between ${[...idsPlace].join(", ")}`);
+    }
     for (const id of column) {
       const node = nodeMap.get(id);
-      node.x = node.column || x;
+      node.x = node.column ?? x;
       idsPlace.delete(id);
     }
     x++;
@@ -23,7 +26,7 @@ function calculateNodeXPosition(nodeMap, data) {
   const from = new Set(data.map((flow) => flow.from));
   ids.filter((id) => !from.has(id)).forEach((id) => {
     const node = nodeMap.get(id);
-    node.x = node.column || maxX;
+    node.x = node.column ?? maxX;
     maxX = Math.max(maxX, node.x);
   });
   return maxX;
@@ -115,25 +118,29 @@ function nodeLabelSpaceAllocation(nodes, config, maxX) {
 
 // src/render/styles.ts
 function generateBaseStyles(config) {
-  return `rect[id^='node-']{fill:#777}
-path[id^='flow-']{opacity:0.6;fill:#ddd;&:hover{opacity:1}}
-path.flowvalue-zero{stroke:#ddd;stroke-width:1}
-g[id^='label-node']{pointer-events:none;rect{fill:#fff}}
-*{font-size:${config.fontsize}pt}`;
+  const svg = `svg#${config.id}`;
+  return `:where(${svg}) {font-size:${config.fontsize}pt}
+:where(${svg} rect[id^='node-']) {fill:#777}
+:where(${svg} path[id^='flow-']) {opacity:0.6;fill:#ddd}
+:where(${svg} path[id^='flow-']:hover) {opacity:1}
+:where(${svg} path.flowvalue-zero) {stroke:#ddd;stroke-width:1}
+:where(${svg} g[id^='label-node']) {pointer-events:none}
+:where(${svg} g[id^='label-node'] rect) {fill:#fff}
+`;
 }
-function generateStyles(nodeMap, flows) {
+function generateStyles(nodeMap, flows, config) {
   let styles = "";
   for (const node of nodeMap.values()) {
     const styleStr = objectToCSS(node.style);
     if (styleStr) {
-      styles += `#node-${node.idClean} { ${styleStr} }
+      styles += `svg#${config.id} #node-${node.idClean} { ${styleStr} }
 `;
     }
   }
   for (const flow of flows) {
     const styleStr = objectToCSS(flow.style);
     if (styleStr) {
-      styles += `#flow-${flow.idClean} { ${styleStr} }
+      styles += `svg#${config.id} #flow-${flow.idClean} { ${styleStr} }
 `;
     }
   }
@@ -290,9 +297,7 @@ function renderLabels(labelGroup, nodes, config, maxX) {
 }
 function styling(svg, nodes, flows, config) {
   const styleTag = document.createElementNS(svgNS, "style");
-  styleTag.textContent = `svg#${config.id}{
-${generateBaseStyles(config)}
-${generateStyles(nodes, flows)}}`;
+  styleTag.textContent = generateBaseStyles(config) + generateStyles(nodes, flows, config);
   svg.appendChild(styleTag);
 }
 function scaling(nodes, flows, config, width, height, maxX, maxY, maxNodeWidth) {
@@ -303,7 +308,7 @@ function scaling(nodes, flows, config, width, height, maxX, maxY, maxNodeWidth) 
   config.scaleY = scaleY;
   for (const node of nodes.values()) {
     const shift = node.x === 0 ? 0 : (maxNodeWidth.get(node.x) - node.width) / (node.x === maxX ? 1 : 2);
-    node.x_ = node.x * scaleX + config.labelSpaceLeft + shift + config.margin[1];
+    node.x_ = node.x * scaleX + config.labelSpaceLeft + shift + config.margin[3];
     node.y_ = node.y * scaleY + config.margin[0];
     node.size_ = node.size * scaleY;
   }
