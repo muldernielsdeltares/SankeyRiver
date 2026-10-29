@@ -69,7 +69,7 @@ export class Sankey {
         this.container.appendChild(svg)
 
         //setup tooltip div element
-        makeTooltip(containerId, this.config)
+        const tooltip = makeTooltip(containerId, this.config)
 
         //clean up config, extract nodes and flows
         const { nodes, flows } = enrichData(this.config)
@@ -117,7 +117,7 @@ export class Sankey {
         )
 
         //tooltips
-        finalizeTooltips()
+        finalizeTooltips(svg, tooltip)
 
         drag(svg, this.nodes, config.scaleX, config.scaleY, groupFlows)
     }

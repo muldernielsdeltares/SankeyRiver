@@ -1,59 +1,50 @@
 import { SankeyConfig } from "../Sankey"
 
-let tooltipId = ""
-let tooltipRect: DOMRect
-const viewportWidth = window.innerWidth
-const viewportHeight = window.innerHeight
-
-export function makeTooltip(containerId: string, config: SankeyConfig) {
-    const el = document.createElement("div")
-    tooltipId = `${containerId}-tooltip`
+export function makeTooltip(containerId: string, config: SankeyConfig): HTMLElement {
+    //reuse tooltip of a previous render in the same container
+    const tooltipId = `${containerId}-tooltip`
+    const el = document.getElementById(tooltipId) ?? document.createElement("div")
     el.setAttribute("id", tooltipId)
     el.setAttribute(
         "style",
         `font-size:${config.fontsize}pt;background:#000;border-radius:5px;padding:5px;color:#fff;position:absolute;display:none;`,
     )
-    document.body.appendChild(el)
+    if (!el.isConnected) document.body.appendChild(el)
+    return el
 }
 
-export function finalizeTooltips() {
-    document.querySelectorAll("[data-tooltip]").forEach((el) => {
+export function finalizeTooltips(svg: SVGSVGElement, tooltip: HTMLElement) {
+    svg.querySelectorAll<SVGElement>("[data-tooltip]").forEach((el) => {
         const text = el.getAttribute("data-tooltip")
         if (text) {
-            el.addEventListener("mouseenter", openTooltip(text))
-            el.addEventListener("mousemove", moveTooltip())
-            el.addEventListener("mouseleave", closeTooltip())
+            el.addEventListener("mouseenter", openTooltip(tooltip, text))
+            el.addEventListener("mousemove", moveTooltip(tooltip))
+            el.addEventListener("mouseleave", closeTooltip(tooltip))
         }
     })
 }
-function getTooltip() {
-    return document.getElementById(tooltipId)
-}
 
-function openTooltip(text) {
+function openTooltip(tooltip: HTMLElement, text: string) {
     return () => {
-        const tooltip = getTooltip()
         tooltip.innerHTML = text
         tooltip.style.display = "block"
-        tooltipRect = tooltip.getBoundingClientRect()
     }
 }
 
-function moveTooltip() {
-    return (event) => {
-        const tooltip = getTooltip()
-        tooltipRect = tooltip.getBoundingClientRect()
+function moveTooltip(tooltip: HTMLElement) {
+    return (event: MouseEvent) => {
+        const tooltipRect = tooltip.getBoundingClientRect()
 
         // Base coordinates: client position + current scroll offsets
         let x = event.clientX + window.scrollX + 10
         let y = event.clientY + window.scrollY + 10
 
         // Prevent tooltip from going off the right/bottom edge of the viewport
-        if (event.clientX + tooltipRect.width + 20 > viewportWidth) {
+        if (event.clientX + tooltipRect.width + 20 > window.innerWidth) {
             x = event.clientX + window.scrollX - tooltipRect.width - 10
         }
 
-        if (event.clientY + tooltipRect.height + 20 > viewportHeight) {
+        if (event.clientY + tooltipRect.height + 20 > window.innerHeight) {
             y = event.clientY + window.scrollY - tooltipRect.height - 10
         }
 
@@ -62,9 +53,8 @@ function moveTooltip() {
     }
 }
 
-function closeTooltip() {
-    return function () {
-        const tooltip = getTooltip()
+function closeTooltip(tooltip: HTMLElement) {
+    return () => {
         tooltip.style.display = "none"
     }
 }
