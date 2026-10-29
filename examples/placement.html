@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>SankeyRiver - node placement</title>
+</head>
+<body>
+<div id="chart" style="width: 800px; height: 420px"></div>
+
+<script type="module">
+    import { Sankey } from "../dist/sankey.js"
+
+    new Sankey("chart", {
+        flows: [
+            { from: "Rhine", to: "Waal", value: 65 },
+            { from: "Rhine", to: "Pannerdensch Kanaal", value: 35 },
+            { from: "Pannerdensch Kanaal", to: "Nederrijn", value: 20 },
+            { from: "Pannerdensch Kanaal", to: "IJssel", value: 15 },
+            { from: "Waal", to: "North Sea", value: 65 },
+            { from: "Nederrijn", to: "North Sea", value: 20 },
+            { from: "IJssel", to: "IJsselmeer", value: 15 },
+            { from: "IJsselmeer", to: "Wadden Sea", value: 15 },
+        ],
+        nodeConfig: {
+            // force a column (0 = first); by default Waal would sit in column 1
+            Waal: { column: 2 },
+            // order within a column: lower comes first (default 0)
+            IJssel: { sorting: -1 },
+            // same height as IJsselmeer
+            "Wadden Sea": { relativeTo: { id: "IJsselmeer" } },
+            // after Wadden Sea, with one extra gap (= 2 gaps from the top)
+            "North Sea": { sorting: 1, paddings: 2 },
+            // extra gap above the Nederrijn
+            Nederrijn: { paddings: 3 },
+        },
+    })
+</script>
+</body>
+</html>

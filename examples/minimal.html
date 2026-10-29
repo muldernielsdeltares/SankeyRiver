@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>SankeyRiver - minimal</title>
+</head>
+<body>
+<div id="chart" style="width: 800px; height: 400px"></div>
+
+<script type="module">
+    import { Sankey } from "../dist/sankey.js"
+
+    new Sankey("chart", {
+        flows: [
+            { from: "Rain", to: "Soil", value: 60 },
+            { from: "Rain", to: "Runoff", value: 25 },
+            { from: "Soil", to: "Evaporation", value: 25 },
+            { from: "Soil", to: "Groundwater", value: 35 },
+            { from: "Runoff", to: "River", value: 25 },
+        ],
+    })
+</script>
+</body>
+</html>

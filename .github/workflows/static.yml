@@ -33,11 +33,17 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
+      # dist/* stays at the site root (existing import URLs keep working);
+      # examples/ and docs/ are added, with dist/ next to them for their imports
+      - name: Assemble site
+        run: |
+          mkdir _site
+          cp dist/* _site/
+          cp -r dist examples docs _site/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: './dist'
+          path: './_site'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

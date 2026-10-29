@@ -12,7 +12,7 @@
   },
   "keywords": [],
   "author": "Niels Mulder",
-  "license": "ISC",
+  "license": "MIT",
   "description": "",
   "devDependencies": {
     "@eslint/js": "^9.39.1",
