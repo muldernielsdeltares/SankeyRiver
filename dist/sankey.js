@@ -614,3 +614,8 @@ var Sankey = class {
 export {
   Sankey
 };
+/*!
+ * Node placement (columns, stacking, padding) is adapted from chartjs-chart-sankey
+ * Copyright (c) 2019-2026 Jukka Kurkela, MIT License
+ * https://github.com/kurkle/chartjs-chart-sankey
+ */

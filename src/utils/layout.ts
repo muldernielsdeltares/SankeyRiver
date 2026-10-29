@@ -1,3 +1,8 @@
+/*!
+ * Node placement (columns, stacking, padding) is adapted from chartjs-chart-sankey
+ * Copyright (c) 2019-2026 Jukka Kurkela, MIT License
+ * https://github.com/kurkle/chartjs-chart-sankey
+ */
 import { Node } from "../models/Node"
 import { Flow } from "../models/Flow"
 import { SankeyConfig } from "../Sankey"
